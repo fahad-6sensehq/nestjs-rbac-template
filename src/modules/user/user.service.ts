@@ -48,9 +48,9 @@ export class UserService {
 
         let userObj;
         if (user) {
-            userObj = ConstructObjectFromDto.constructCreateUserObject(createUser, role, user);
+            userObj = ConstructObjectFromDto.constructCreateUserObject(createUser, user);
         } else {
-            userObj = ConstructObjectFromDto.constructMainAdminObject(createUser, role);
+            userObj = ConstructObjectFromDto.constructMainAdminObject(createUser);
         }
 
         const newUser = await this.userModel.create(userObj);
@@ -94,31 +94,6 @@ export class UserService {
     }
 
     async findOneData(id: string): Promise<any> {
-        const objId = new Types.ObjectId(id);
-
-        const aggregate: PipelineStage[] = [];
-        AggregationHelper.filterByMatchAndQueriesAll(aggregate, [{ _id: objId }]);
-
-        AggregationHelper.lookupForCustomFields(aggregate, 'rolepermissions', 'roleId', 'roleId', 'roles');
-        AggregationHelper.lookupForCustomFields(aggregate, 'permissions', 'roles.permissionId', '_id', 'permissions');
-
-        AggregationHelper.projectFields(aggregate, ['password', 'resetLink', 'roles']);
-
-        const result = await this.userModel.aggregate(aggregate).exec();
-
-        if (!result.length) return null;
-
-        let scopes = result[0].permissions.map((permission: IPermission) => permission.name);
-
-        delete result[0].permissions;
-
-        return {
-            ...result[0],
-            scopes: [...scopes],
-        };
-    }
-
-    async findOneDataV1(id: string): Promise<any> {
         const objId = new Types.ObjectId(id);
 
         const aggregate: PipelineStage[] = [];
