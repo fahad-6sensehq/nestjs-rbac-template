@@ -8,5 +8,5 @@ export class CreateUserRoleDto {
     roleId: string;
 
     @ApiProperty({ type: String })
-    clientId: string;
+    tenantId: string;
 }

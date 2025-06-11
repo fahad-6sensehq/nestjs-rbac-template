@@ -28,7 +28,7 @@ export class AuthService {
         private readonly jwtService: JwtService,
     ) {}
 
-    async signUpMainAdmin(createUser: CreateUserDto, clientId: Types.ObjectId): Promise<IUser> {
+    async signUpMainAdmin(createUser: CreateUserDto, tenantId: Types.ObjectId): Promise<IUser> {
         const password = createUser.password;
 
         const isValidPassword = await AuthHelper.validatePassword(password);
@@ -44,13 +44,13 @@ export class AuthService {
             ...createUser,
             password: hashedPassword,
             role: RoleType.SUPER_ADMIN,
-            clientId,
-            createdBy: clientId,
+            tenantId,
+            createdBy: tenantId,
         };
 
         const user = await this.userService.createMainAdmin(userObj);
 
-        this.logger.log(`signUpMainAdmin: new root user created: ${user}`);
+        this.logger.log(`signUpMainAdmin: new root user created: ${user.email}`);
 
         return user;
     }
@@ -69,7 +69,7 @@ export class AuthService {
                 ...createUser,
                 password: null,
                 role: role,
-                clientId: user?.clientId,
+                tenantId: user?.tenantId,
                 status: UserStatusEnum.INVITED,
                 createdBy: user.userId,
             };
@@ -206,10 +206,10 @@ export class AuthService {
         return { accessToken, refreshToken };
     }
 
-    async sendForgetPasswordLink(forgetDto: ForgetPassDto, clientId: string): Promise<any> {
+    async sendForgetPasswordLink(forgetDto: ForgetPassDto, tenantId: string): Promise<any> {
         const user = await this.userService.findByEmail(forgetDto.email);
 
-        if (!user || user.status === UserStatusEnum.INVITED || user.clientId.toString() !== clientId) {
+        if (!user || user.status === UserStatusEnum.INVITED || user.tenantId.toString() !== tenantId) {
             throw ExceptionHelper.getInstance().throwUserNotFoundException();
         }
 
@@ -320,7 +320,7 @@ export class AuthService {
             {
                 userId: user?._id,
                 userType: user?.role,
-                clientId: user?.clientId,
+                tenantId: user?.tenantId,
                 email: user?.email,
             },
             {

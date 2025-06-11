@@ -19,16 +19,6 @@ export class CreateUserDto {
     name: string;
 
     @IsString()
-    @IsNotEmpty()
-    @ApiProperty({ type: String })
-    phone: string;
-
-    @IsString()
-    @IsNotEmpty()
-    @ApiProperty({ type: String })
-    receiveUpdate: string;
-
-    @IsString()
     @IsOptional()
     @ApiProperty({ type: String })
     status: string;
@@ -37,28 +27,4 @@ export class CreateUserDto {
     @IsOptional()
     @ApiProperty({ type: String })
     role: string;
-
-    @IsString()
-    @IsOptional()
-    @ApiProperty({ type: String })
-    projectId: string;
-
-    // @IsOptional()
-    // addressId: Types.ObjectId;
-
-    // @IsOptional()
-    // clientId: Types.ObjectId;
-
-    // @IsOptional()
-    // createdBy: Types.ObjectId;
-
-    // @IsString()
-    // @IsNotEmpty()
-    // registrationType: string;
-
-    // isVerified: boolean;
-
-    // isRegistered: boolean;
-
-    // avatar: string;
 }

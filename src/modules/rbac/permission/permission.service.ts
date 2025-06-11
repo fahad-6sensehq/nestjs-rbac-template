@@ -2,8 +2,8 @@ import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { ConstructObjectFromDto } from 'common/instances/constructObjectFromDTO';
 import { Model } from 'mongoose';
-import { Permission, PermissionDocument } from './entities/permission.entity';
 import { CreatePermissionDto } from './dtos/createPermission.dto';
+import { Permission, PermissionDocument } from './entities/permission.entity';
 
 @Injectable()
 export class PermissionService {
@@ -14,6 +14,7 @@ export class PermissionService {
 
     async create(createPermissionDto: CreatePermissionDto) {
         const permissionObj = ConstructObjectFromDto.constructCreatePermissionObject(createPermissionDto);
+
         return await this.permissionModel.create(permissionObj);
     }
 

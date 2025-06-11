@@ -26,7 +26,7 @@ export class AccessTokenStrategy extends PassportStrategy(Strategy, 'jwt-refresh
             email: payload.email,
             role: payload.role,
             name: user.name,
-            clientId: user.clientId,
+            tenantId: user.tenantId,
         };
     }
 }

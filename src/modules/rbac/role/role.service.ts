@@ -3,6 +3,7 @@ import { InjectModel } from '@nestjs/mongoose';
 import { ConstructObjectFromDto } from 'common/instances/constructObjectFromDTO';
 import { ExceptionHelper } from 'common/instances/ExceptionHelper';
 import { Model } from 'mongoose';
+import { IPermission } from '../permission/interface/permission.interface';
 import { PermissionService } from '../permission/permission.service';
 import { RolePermissionService } from '../rolePermission/rolePermission.service';
 import { CreateRoleDto } from './dtos/createRole.dto';

@@ -20,10 +20,10 @@ export class AuthController {
     @UseGuards(TenantCredentialsGuard)
     async signUpMainAdmin(@Req() req: Request): Promise<IUser> {
         const createUser = req.body as CreateUserDto;
-        const clientId = await TenantIdGetHelper.getTenantIdFromRequest(req);
-        const clientObj = new mongoose.Types.ObjectId(clientId);
+        const tenantId = await TenantIdGetHelper.getTenantIdFromRequest(req);
+        const tenantObj = new mongoose.Types.ObjectId(tenantId);
 
-        return this.authService.signUpMainAdmin(createUser, clientObj);
+        return this.authService.signUpMainAdmin(createUser, tenantObj);
     }
 
     @Post('sign-up/invite')
@@ -41,9 +41,9 @@ export class AuthController {
     @Post('forgot-password')
     @UseGuards(TenantCredentialsGuard)
     async forgotPassword(@Body() forgetDto: ForgetPassDto, @Req() req: Request): Promise<any> {
-        const clientId = await TenantIdGetHelper.getTenantIdFromRequest(req);
+        const tenantId = await TenantIdGetHelper.getTenantIdFromRequest(req);
 
-        return this.authService.sendForgetPasswordLink(forgetDto, clientId);
+        return this.authService.sendForgetPasswordLink(forgetDto, tenantId);
     }
 
     @Post('set-password')

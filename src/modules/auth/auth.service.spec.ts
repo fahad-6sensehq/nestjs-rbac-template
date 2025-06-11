@@ -80,7 +80,7 @@ describe('AuthService', () => {
         role: RoleType.SUPER_ADMIN,
     } as CreateUserDto;
 
-    const clientId = new Types.ObjectId('5f3f5f3f5f3f5f3f5f3f5f3f');
+    const tenantId = new Types.ObjectId('5f3f5f3f5f3f5f3f5f3f5f3f');
 
     const mockUser: any = {
         _id: '65d481d0aa400c99e75fea9a',
@@ -89,7 +89,7 @@ describe('AuthService', () => {
         userRoleId: '65d481d1aa400c99e75feaa0',
         status: UserStatusEnum.ACTIVE,
         role: RoleType.SUPER_ADMIN,
-        clientId: '65d48166aa400c99e75fea70',
+        tenantId: '65d48166aa400c99e75fea70',
     };
 
     const mockClient: any = {
@@ -104,14 +104,14 @@ describe('AuthService', () => {
             jest.spyOn(userService, 'createMainAdmin').mockResolvedValueOnce({
                 ...createUserDto,
                 password: 'hashedPassword',
-                _id: clientId,
+                _id: tenantId,
             });
 
-            const result = await service.signUpMainAdmin(createUserDto, clientId);
+            const result = await service.signUpMainAdmin(createUserDto, tenantId);
             expect(result).toEqual({
                 ...createUserDto,
                 password: 'hashedPassword',
-                _id: clientId,
+                _id: tenantId,
             });
         });
 
@@ -128,7 +128,7 @@ describe('AuthService', () => {
                 };
             });
 
-            await expect(service.signUpMainAdmin(CreateUserDto, clientId)).rejects.toEqual({
+            await expect(service.signUpMainAdmin(CreateUserDto, tenantId)).rejects.toEqual({
                 statusCode: HttpStatus.BAD_REQUEST,
                 message: 'Use at least 8 characters, with a mix of upper & lower case letters and a number.',
             });
@@ -191,7 +191,7 @@ describe('AuthService', () => {
                 password: null,
                 role: mockUser.role,
                 status: UserStatusEnum.INVITED,
-                clientId: mockUser.clientId,
+                tenantId: mockUser.tenantId,
             };
 
             jest.spyOn(userService, 'create').mockResolvedValueOnce({
@@ -208,11 +208,9 @@ describe('AuthService', () => {
             expect(result).toEqual({
                 email: createUser.email,
                 name: createUser.name,
-                phone: createUser.phone,
-                receiveUpdate: createUser.receiveUpdate,
                 status: createUser.status,
                 role: createUser.role,
-                clientId: createUser.clientId,
+                tenantId: createUser.tenantId,
                 _id: '65d481d0aa400c99e75fea9a',
             });
 
@@ -237,7 +235,7 @@ describe('AuthService', () => {
 
     describe('handleExistingEmail', () => {
         const createUserDto = { email: 'test@example.com' } as any;
-        const mockUser = { _id: 'user-id-123', clientId: 'client-id' } as any;
+        const mockUser = { _id: 'user-id-123', tenantId: 'client-id' } as any;
 
         it('should cover email already exist error', async () => {
             const error = {
@@ -359,7 +357,7 @@ describe('AuthService', () => {
         it('should return user not found error', async () => {
             jest.spyOn(userService, 'findByEmail').mockResolvedValueOnce({
                 status: UserStatusEnum.INVITED,
-                clientId: '122',
+                tenantId: '122',
             } as any);
 
             jest.spyOn(ExceptionHelper.getInstance(), 'defaultError').mockImplementationOnce(() => {
@@ -380,7 +378,7 @@ describe('AuthService', () => {
         it('should return email with user', async () => {
             jest.spyOn(userService, 'findByEmail').mockResolvedValueOnce({
                 status: UserStatusEnum.ACTIVE,
-                clientId: '123',
+                tenantId: '123',
                 _id: new Types.ObjectId('670f5cb7fcec534287bf881a'),
             } as any);
 
@@ -529,7 +527,7 @@ describe('AuthService', () => {
             const mockUser = {
                 _id: '12345',
                 role: 'admin',
-                clientId: '67890',
+                tenantId: '67890',
                 email: 'test@example.com',
             } as any as IUser;
 

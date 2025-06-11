@@ -74,10 +74,8 @@ export class PermissionGuard implements CanActivate {
             email: user.email,
             role: user.role,
             name: user.name,
-            vendorId: user?.vendorId ? user.vendorId.toString() : null,
-            clientId: user.clientId.toString(),
+            tenantId: user.tenantId.toString(),
             createdBy: user.createdBy.toString(),
-            // permissions: [...userPermissions],
         };
 
         return true;

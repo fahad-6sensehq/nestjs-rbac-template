@@ -6,6 +6,7 @@ import { AuthHelper } from 'common/instances/auth.helper';
 import { ConstructObjectFromDto } from 'common/instances/constructObjectFromDTO';
 import { ExceptionHelper } from 'common/instances/ExceptionHelper';
 import { Utils } from 'common/instances/utils';
+import { IPermission } from 'modules/rbac/permission/interface/permission.interface';
 import { RoleService } from 'modules/rbac/role/role.service';
 import { UserRoleService } from 'modules/rbac/userRole/userRole.service';
 import { IUser, IUserListQuery, UserStatusEnum } from 'modules/user/interface/user.interface';
@@ -47,9 +48,9 @@ export class UserService {
 
         let userObj;
         if (user) {
-            userObj = ConstructObjectFromDto.constructCreateUserObject(createUser, user);
+            userObj = ConstructObjectFromDto.constructCreateUserObject(createUser, role, user);
         } else {
-            userObj = ConstructObjectFromDto.constructMainAdminObject(createUser);
+            userObj = ConstructObjectFromDto.constructMainAdminObject(createUser, role);
         }
 
         const newUser = await this.userModel.create(userObj);
@@ -57,7 +58,7 @@ export class UserService {
         await this.userRoleService.create({
             userId: newUser._id.toString(),
             roleId: role._id.toString(),
-            clientId: String(newUser.clientId),
+            tenantId: String(newUser.tenantId),
         });
 
         return newUser;
@@ -74,64 +75,50 @@ export class UserService {
     async findAll(user: IUser, query: IUserListQuery): Promise<{ data?: IUser[]; count?: number }> {
         const { aggregate, page, size } = Utils.defineListRule(query);
 
-        if (user.role !== RoleType.USER) {
-            AggregationHelper.filterByMatchAndQueriesAll(aggregate, [
-                { clientId: new Types.ObjectId(`${user?.clientId}`) },
-            ]);
+        AggregationHelper.filterByMatchAndQueriesAll(aggregate, [
+            { tenantId: new Types.ObjectId(`${user?.tenantId}`) },
+        ]);
 
-            AggregationHelper.searchByNameAndEmail(aggregate, query);
+        AggregationHelper.searchByNameAndEmail(aggregate, query);
 
-            AggregationHelper.projectFields(aggregate, ['password', 'resetLink']);
-            AggregationHelper.getCountAndDataByFacet(aggregate, +page, +size);
+        AggregationHelper.projectFields(aggregate, ['password', 'resetLink']);
+        AggregationHelper.getCountAndDataByFacet(aggregate, +page, +size);
 
-            const users = await this.userModel.aggregate(aggregate);
+        const users = await this.userModel.aggregate(aggregate);
 
-            if (users.length === 0) {
-                return { data: [], count: 0 };
-            }
-
-            return Utils.returnListResponse(users);
+        if (users.length === 0) {
+            return { data: [], count: 0 };
         }
 
-        if (user?.role === RoleType.USER) {
-            AggregationHelper.filterByMatchAndQueriesAll(aggregate, [
-                { clientId: new Types.ObjectId(`${user?.clientId}`) },
-                { _id: new Types.ObjectId(`${user.userId}`) },
-                { role: RoleType.USER },
-            ]);
-
-            AggregationHelper.lookupForIdLocalKey(aggregate, 'userprojects', 'userId', 'all');
-
-            AggregationHelper.lookupForCustomFields(aggregate, 'users', 'all.otherUsers', '_id', 'allUsers');
-
-            const users = await this.userModel.aggregate(aggregate);
-
-            const objectIds = users[0].allUsers.map((user: IUser) => new Types.ObjectId(`${user._id}`));
-
-            if (users[0].allUsers.length === 0) {
-                return { data: [], count: 0 };
-            }
-
-            const aggregateUsers = [];
-
-            AggregationHelper.filterByMatchAndQueriesAll(aggregateUsers, [{ _id: { $in: objectIds } }]);
-
-            AggregationHelper.searchByNameAndEmail(aggregateUsers, query);
-
-            if (query.status) {
-                AggregationHelper.filterUsersByStatusAndDate(aggregateUsers, query);
-            }
-
-            AggregationHelper.projectFields(aggregateUsers, ['password', 'resetLink']);
-            AggregationHelper.getCountAndDataByFacet(aggregateUsers, +page, +size);
-
-            const allUsers = await this.userModel.aggregate(aggregateUsers);
-
-            return Utils.returnListResponse(allUsers);
-        }
+        return Utils.returnListResponse(users);
     }
 
-    async findOneData(id: string): Promise<IUser> {
+    async findOneData(id: string): Promise<any> {
+        const objId = new Types.ObjectId(id);
+
+        const aggregate: PipelineStage[] = [];
+        AggregationHelper.filterByMatchAndQueriesAll(aggregate, [{ _id: objId }]);
+
+        AggregationHelper.lookupForCustomFields(aggregate, 'rolepermissions', 'roleId', 'roleId', 'roles');
+        AggregationHelper.lookupForCustomFields(aggregate, 'permissions', 'roles.permissionId', '_id', 'permissions');
+
+        AggregationHelper.projectFields(aggregate, ['password', 'resetLink', 'roles']);
+
+        const result = await this.userModel.aggregate(aggregate).exec();
+
+        if (!result.length) return null;
+
+        let scopes = result[0].permissions.map((permission: IPermission) => permission.name);
+
+        delete result[0].permissions;
+
+        return {
+            ...result[0],
+            scopes: [...scopes],
+        };
+    }
+
+    async findOneDataV1(id: string): Promise<any> {
         const objId = new Types.ObjectId(id);
 
         const aggregate: PipelineStage[] = [];
@@ -145,29 +132,29 @@ export class UserService {
             'rolepermissions',
             'userRole.roleId',
             'roleId',
-            'userRole.rolePermissions',
+            'rolePermissions',
         );
 
         AggregationHelper.lookupForIdForeignKey(
             aggregate,
             'permissions',
-            'userRole.rolePermissions.permissionId',
+            'rolePermissions.permissionId',
             'permissions',
         );
 
-        AggregationHelper.projectFields(aggregate, ['password', 'resetLink', 'userRole']);
+        AggregationHelper.projectFields(aggregate, ['password', 'resetLink', 'userRole', 'rolePermissions']);
 
-        const res = await this.userModel.aggregate(aggregate).exec();
-        if (!res.length) return null;
+        const result = await this.userModel.aggregate(aggregate).exec();
 
-        let scopes = res[0].permissions.map((permission) => permission.name);
+        if (!result.length) return null;
 
-        const { permissions, ...userInfo } = res[0];
+        let scopes = result[0].permissions.map((permission: IPermission) => permission.name);
+
+        delete result[0].permissions;
 
         return {
-            ...userInfo,
+            ...result[0],
             scopes: [...scopes],
-            // permissions: permissions || [],
         };
     }
 
@@ -193,7 +180,7 @@ export class UserService {
         const aggregate: PipelineStage[] = [];
 
         AggregationHelper.filterByMatchAndQueriesAll(aggregate, [
-            { clientId: new Types.ObjectId(`${user.clientId}`) },
+            { tenantId: new Types.ObjectId(`${user.tenantId}`) },
             { _id: new Types.ObjectId(id) },
         ]);
 
