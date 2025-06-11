@@ -1,0 +1,41 @@
+{
+    "compilerOptions": {
+        "module": "commonjs",
+        "declaration": true,
+        "removeComments": true,
+        "emitDecoratorMetadata": true,
+        "experimentalDecorators": true,
+        "allowSyntheticDefaultImports": true,
+        "target": "ES2021",
+        "sourceMap": true,
+        "esModuleInterop": true,
+        "moduleResolution": "node",
+        "outDir": "./dist",
+        "baseUrl": "src",
+        "paths": {
+            "@baseSchema/*": ["domain/baseSchema/*"],
+            "@constant/*": ["domain/constants/*"],
+            "@decorator/*": ["domain/decorators/*"],
+            "@entity/*": ["domain/entities/*"],
+            "@guard/*": ["domain/guards/*"],
+            "@instance/*": ["domain/instances/*"],
+            "@interface/*": ["domain/interfaces/*"],
+            "@service/*": ["domain/services/*"],
+            "@spec/*": ["domain/specs/*"],
+            "@validator/*": ["domain/validators/*"],
+            "@module/*": ["infrastructure/modules/*"],
+            "@controller/*": ["application/controllers/*"],
+            "@dto/*": ["application/dtos/*"],
+            "@enum/*": ["domain/enums/*"],
+            "@config/*": ["infrastructure/config/*"],
+            "@util/*": ["domain/utils/*"]
+        },
+        "incremental": true,
+        "skipLibCheck": true,
+        // "strictNullChecks": true,
+        "forceConsistentCasingInFileNames": true,
+        "noImplicitAny": false,
+        "strictBindCallApply": false,
+        "noFallthroughCasesInSwitch": false
+    }
+}
