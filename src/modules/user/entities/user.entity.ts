@@ -41,14 +41,6 @@ export class User extends BaseSchema {
 
     @Prop({
         type: mongoose.Schema.Types.ObjectId,
-        ref: 'Role',
-        required: true,
-        index: true,
-    })
-    roleId: mongoose.Schema.Types.ObjectId;
-
-    @Prop({
-        type: mongoose.Schema.Types.ObjectId,
         ref: 'Tenant',
         required: true,
         index: true,

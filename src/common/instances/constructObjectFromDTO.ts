@@ -1,7 +1,6 @@
 import { DefaultStatusEnum } from 'common/enums/status.enum';
 import { generateUUID } from 'common/utils/generateUUID';
 import { CreatePermissionDto } from 'modules/rbac/permission/dtos/createPermission.dto';
-import { IRole } from 'modules/rbac/role/interface/role.interface';
 import { CreateTenantDto } from 'modules/tenant/dtos/createTenant.dto';
 import { CreateUserDto } from 'modules/user/dtos/createUser.dto';
 import { IUser, UserStatusEnum } from 'modules/user/interface/user.interface';
@@ -25,28 +24,26 @@ export class ConstructObjectFromDto {
         };
     }
 
-    static constructCreateUserObject(newUser: CreateUserDto, role: IRole, user: IUser) {
+    static constructCreateUserObject(newUser: CreateUserDto, user: IUser) {
         return {
             email: newUser.email ?? null,
             password: newUser.password ?? null,
             name: newUser.name ?? null,
             status: newUser.status ?? null,
             role: newUser.role ?? null,
-            roleId: role._id,
             resetLink: null,
             createdBy: user.userId ?? null,
             tenantId: user.tenantId ?? null,
         };
     }
 
-    static constructMainAdminObject(user: any, role: IRole) {
+    static constructMainAdminObject(user: any) {
         return {
             email: user.email ?? null,
             password: user.password ?? null,
             name: user.name ?? null,
             status: UserStatusEnum.ACTIVE,
             role: user.role ?? null,
-            roleId: role._id,
             resetLink: null,
             createdBy: user.createdBy ?? null,
             tenantId: user.tenantId ?? null,

@@ -13,7 +13,6 @@ export interface IUser extends Document {
     name: string;
     status: UserStatusEnum;
     role: RoleType;
-    roleId: any;
     registrationType: string;
     resetLink?: string | null;
     deactivateDate: string;
