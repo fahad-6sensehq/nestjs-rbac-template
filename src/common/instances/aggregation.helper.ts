@@ -1,6 +1,5 @@
 import { IUserListQuery } from 'modules/user/interface/user.interface';
 import { Types } from 'mongoose';
-import { ConstructObjectsFromArrays } from './constructObjectsFromArrays';
 
 export class AggregationHelper {
     static filterByMatchAndQueriesAll(aggregate: any[], queries: any[]): void {
@@ -303,8 +302,16 @@ export class AggregationHelper {
         );
     }
 
+    static getFieldsToProjectFromArray(projectionFields: string[]): Record<string, number> {
+        const fields: Record<string, number> = {};
+        projectionFields.forEach((field) => {
+            fields[field] = 0;
+        });
+        return fields;
+    }
+
     static projectFields(aggregate: any[], fields: string[]): void {
-        const projectFields = ConstructObjectsFromArrays.getFieldsToProjectFromArray(fields);
+        const projectFields = this.getFieldsToProjectFromArray(fields);
 
         aggregate.push({
             $project: {

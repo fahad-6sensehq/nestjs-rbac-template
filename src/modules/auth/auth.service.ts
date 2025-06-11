@@ -4,6 +4,7 @@ import { appConfig } from 'app.config';
 import { Timer } from 'common/constants/timer.constants';
 import { RoleType } from 'common/enums/role.enum';
 import { AuthHelper } from 'common/instances/auth.helper';
+import { DateHelper } from 'common/instances/date.helper';
 import { ExceptionHelper } from 'common/instances/ExceptionHelper';
 import { NestHelper } from 'common/instances/NestHelper';
 import { EmailTemplate } from 'common/ses/email.template';
@@ -149,8 +150,7 @@ export class AuthService {
         }
 
         // update last login time
-        // const lastLogin = new DateHelper().getNowInISOString();
-        const lastLogin = new Date().toISOString();
+        const lastLogin = new DateHelper().getNowInISOString();
         user.lastLogin = lastLogin;
         await this.userService.updateUserLastLogin(user._id.toString(), lastLogin);
 

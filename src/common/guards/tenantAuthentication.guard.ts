@@ -2,7 +2,7 @@ import { CanActivate, ExecutionContext, Injectable, UnauthorizedException } from
 import { TenantService } from 'modules/tenant/tenant.service';
 
 @Injectable()
-export class ClientCredentialsGuard implements CanActivate {
+export class TenantCredentialsGuard implements CanActivate {
     constructor(private tenantService: TenantService) {}
 
     async canActivate(context: ExecutionContext): Promise<boolean> {

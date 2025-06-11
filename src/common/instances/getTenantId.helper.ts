@@ -2,8 +2,8 @@ import { Injectable, Req, UnauthorizedException } from '@nestjs/common';
 import { Request } from 'express';
 
 @Injectable()
-export class ClientIDGetHelper {
-    static async getClientIdFromRequest(@Req() request: Request): Promise<string> {
+export class TenantIdGetHelper {
+    static async getTenantIdFromRequest(@Req() request: Request): Promise<string> {
         const authHeader = request.headers['authorization'];
 
         if (!authHeader) {
@@ -17,12 +17,12 @@ export class ClientIDGetHelper {
 
         const credentialsBase64 = authParts[1];
         const credentials = Buffer.from(credentialsBase64, 'base64').toString('utf-8');
-        const [clientId] = credentials.split(':');
+        const [tenantId] = credentials.split(':');
 
-        if (!clientId) {
+        if (!tenantId) {
             throw new UnauthorizedException('Invalid client credentials');
         }
 
-        return clientId;
+        return tenantId;
     }
 }

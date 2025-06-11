@@ -1,8 +1,8 @@
 import { Body, Controller, Post, Req, Res, UseGuards } from '@nestjs/common';
 import { GetUser } from 'common/decorators/getUser.decorator';
 import { RequirePermissions } from 'common/decorators/require-permission.decorator';
-import { ClientCredentialsGuard } from 'common/guards/tenantAuthentication.guard';
-import { ClientIDGetHelper } from 'common/instances/getClientId.helper';
+import { TenantCredentialsGuard } from 'common/guards/tenantAuthentication.guard';
+import { TenantIdGetHelper } from 'common/instances/getTenantId.helper';
 import { Request, Response } from 'express';
 import { AuthService } from 'modules/auth/auth.service';
 import { ForgetPassDto } from 'modules/auth/dtos/forgotPassword.dto';
@@ -17,10 +17,10 @@ export class AuthController {
     constructor(private readonly authService: AuthService) {}
 
     @Post('sign-up/main-admin')
-    @UseGuards(ClientCredentialsGuard)
+    @UseGuards(TenantCredentialsGuard)
     async signUpMainAdmin(@Req() req: Request): Promise<IUser> {
         const createUser = req.body as CreateUserDto;
-        const clientId = await ClientIDGetHelper.getClientIdFromRequest(req);
+        const clientId = await TenantIdGetHelper.getTenantIdFromRequest(req);
         const clientObj = new mongoose.Types.ObjectId(clientId);
 
         return this.authService.signUpMainAdmin(createUser, clientObj);
@@ -33,15 +33,15 @@ export class AuthController {
     }
 
     @Post('sign-in')
-    @UseGuards(ClientCredentialsGuard)
+    @UseGuards(TenantCredentialsGuard)
     async signIn(@Body() loginDto: LoginDto, @Res() res: Response): Promise<Response> {
         return this.authService.signIn(loginDto, res);
     }
 
     @Post('forgot-password')
-    @UseGuards(ClientCredentialsGuard)
+    @UseGuards(TenantCredentialsGuard)
     async forgotPassword(@Body() forgetDto: ForgetPassDto, @Req() req: Request): Promise<any> {
-        const clientId = await ClientIDGetHelper.getClientIdFromRequest(req);
+        const clientId = await TenantIdGetHelper.getTenantIdFromRequest(req);
 
         return this.authService.sendForgetPasswordLink(forgetDto, clientId);
     }
@@ -57,7 +57,6 @@ export class AuthController {
     }
 
     @Post('reset-password')
-    // @UseGuards(ClientCredentialsGuard)
     resetPassword(@Body() resetDto: SetPasswordDto): Promise<IUser> {
         return this.authService.resetPassword(resetDto);
     }
