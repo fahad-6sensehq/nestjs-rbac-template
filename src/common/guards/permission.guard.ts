@@ -6,19 +6,19 @@ import {
     Logger,
     UnauthorizedException,
 } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { Reflector } from '@nestjs/core';
 import { JwtService } from '@nestjs/jwt';
-import { appConfig } from 'app.config';
 import { NestHelper } from 'common/instances/NestHelper';
 import { UserService } from 'modules/user/user.service';
 
 @Injectable()
 export class PermissionGuard implements CanActivate {
-    private readonly logger = new Logger(PermissionGuard.name);
     constructor(
         private reflector: Reflector,
         private jwt: JwtService,
         private readonly userService: UserService,
+        private readonly configService: ConfigService,
     ) {}
 
     async canActivate(context: ExecutionContext): Promise<boolean> {
@@ -45,7 +45,7 @@ export class PermissionGuard implements CanActivate {
         const token = tokenParts[1];
 
         try {
-            this.jwt.verify(token, { secret: appConfig.jwtSecret });
+            this.jwt.verify(token, { secret: this.configService.getOrThrow('JWT_SECRET') });
         } catch (err) {
             throw new UnauthorizedException('Invalid token');
         }
@@ -74,8 +74,6 @@ export class PermissionGuard implements CanActivate {
             email: user.email,
             role: user.role,
             name: user.name,
-            tenantId: user.tenantId.toString(),
-            createdBy: user.createdBy.toString(),
         };
 
         return true;

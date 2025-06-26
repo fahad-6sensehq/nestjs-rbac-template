@@ -1,8 +1,8 @@
 import { Module } from '@nestjs/common';
-import { ConfigModule } from '@nestjs/config';
-import { MongooseModule } from '@nestjs/mongoose';
-import { appConfig } from 'app.config';
+import { ConfigModule, ConfigService } from '@nestjs/config';
+import { AppConfig } from 'app.config';
 import { AuthModule } from 'modules/auth/auth.module';
+import { DatabaseModule } from 'modules/database/database.module';
 import { PermissionModule } from 'modules/rbac/permission/permission.module';
 import { RoleModule } from 'modules/rbac/role/role.module';
 import { RolePermissionModule } from 'modules/rbac/rolePermission/rolePermission.module';
@@ -15,7 +15,7 @@ import { UserModule } from 'modules/user/user.module';
         ConfigModule.forRoot({
             isGlobal: true,
         }),
-        MongooseModule.forRoot(`${appConfig.mongodbURL}`),
+        DatabaseModule,
         AuthModule,
         TenantModule,
         PermissionModule,
@@ -27,4 +27,8 @@ import { UserModule } from 'modules/user/user.module';
     controllers: [],
     providers: [],
 })
-export class AppModule {}
+export class AppModule {
+    constructor(private readonly configService: ConfigService) {
+        AppConfig.initialize(this.configService);
+    }
+}

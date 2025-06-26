@@ -1,6 +1,6 @@
 import { BadRequestException, HttpStatus, Injectable, Logger, NotFoundException } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
-import { appConfig } from 'app.config';
 import { Timer } from 'common/constants/timer.constants';
 import { RoleType } from 'common/enums/role.enum';
 import { AuthHelper } from 'common/instances/auth.helper';
@@ -26,6 +26,7 @@ export class AuthService {
     constructor(
         private readonly userService: UserService,
         private readonly jwtService: JwtService,
+        private readonly configService: ConfigService,
     ) {}
 
     async signUpMainAdmin(createUser: CreateUserDto, tenantId: Types.ObjectId): Promise<IUser> {
@@ -136,7 +137,9 @@ export class AuthService {
             }
         } else if (loginDto.type === GrantType.TOKEN) {
             try {
-                const decoded = this.jwtService.verify(loginDto.token, { secret: appConfig.jwtSecret });
+                const decoded = this.jwtService.verify(loginDto.token, {
+                    secret: this.configService.getOrThrow('JWT_SECRET'),
+                });
                 user = await this.userService.findByEmail(decoded.email);
 
                 if (!user) {
@@ -195,11 +198,11 @@ export class AuthService {
         const [accessToken, refreshToken] = await Promise.all([
             this.jwtService.sign(
                 { userId: user._id, email: user.email, role: user.role },
-                { secret: appConfig.jwtSecret, expiresIn: expiresIn },
+                { secret: this.configService.getOrThrow('JWT_SECRET'), expiresIn: expiresIn },
             ),
             this.jwtService.sign(
                 { userId: user._id, email: user.email, role: user.role },
-                { secret: appConfig.jwtSecret, expiresIn: Timer.MONTH },
+                { secret: this.configService.getOrThrow('JWT_SECRET'), expiresIn: Timer.MONTH },
             ),
         ]);
 
@@ -251,7 +254,9 @@ export class AuthService {
             ExceptionHelper.getInstance().throwUserNotFoundException();
         } else {
             try {
-                this.jwtService.verify(resetDto.token, { secret: appConfig.jwtSecret }) as object;
+                this.jwtService.verify(resetDto.token, {
+                    secret: this.configService.getOrThrow('JWT_SECRET'),
+                }) as object;
                 const jwtObject = this.jwtService.decode(resetDto.token);
 
                 if (jwtObject.email !== user.email) {
@@ -307,7 +312,9 @@ export class AuthService {
             ExceptionHelper.getInstance().throwUserNotFoundException();
         } else {
             try {
-                this.jwtService.verify(verifyTokenDto.token, { secret: appConfig.jwtSecret }) as object;
+                this.jwtService.verify(verifyTokenDto.token, {
+                    secret: this.configService.getOrThrow('JWT_SECRET'),
+                }) as object;
                 return { success: true };
             } catch (error) {
                 ExceptionHelper.getInstance().tokenExpired();
@@ -324,7 +331,7 @@ export class AuthService {
                 email: user?.email,
             },
             {
-                secret: appConfig?.jwtSecret,
+                secret: this.configService.getOrThrow('JWT_SECRET'),
                 expiresIn: Timer.MINUTES_30,
             },
         );
