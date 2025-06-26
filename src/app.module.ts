@@ -15,7 +15,7 @@ import { UserModule } from 'modules/user/user.module';
         ConfigModule.forRoot({
             isGlobal: true,
         }),
-        MongooseModule.forRoot(`${appConfig.mongodbURL}${appConfig.serverType}_${appConfig.dbName}`),
+        MongooseModule.forRoot(`${appConfig.mongodbURL}`),
         AuthModule,
         TenantModule,
         PermissionModule,
@@ -28,8 +28,3 @@ import { UserModule } from 'modules/user/user.module';
     providers: [],
 })
 export class AppModule {}
-// export class AppModule implements NestModule {
-//     configure(consumer: MiddlewareConsumer) {
-//         consumer.apply(RequestTimingMiddleware).forRoutes('*');
-//     }
-// }

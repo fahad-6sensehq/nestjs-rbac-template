@@ -1,4 +1,4 @@
-import { LogLevel, ValidationPipe } from '@nestjs/common';
+import { ValidationPipe } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { appConfig } from 'app.config';
@@ -6,14 +6,10 @@ import { AppModule } from './app.module';
 
 async function bootstrap() {
     try {
-        const loggerMap: Record<string, LogLevel[]> = {
-            beta: ['log', 'error', 'warn', 'debug', 'verbose'],
-            prod: ['log', 'error', 'warn'],
-        };
-
-        const logger = loggerMap[appConfig.serverType];
-
-        const app = await NestFactory.create(AppModule, { cors: true, logger });
+        const app = await NestFactory.create(AppModule, {
+            cors: true,
+            logger: ['log', 'error', 'warn'],
+        });
 
         const cookieParser = require('cookie-parser').default || require('cookie-parser');
         const compression = require('compression').default || require('compression');
@@ -36,7 +32,6 @@ async function bootstrap() {
     🚀 Application Configuration 🚀
     ================================
           PORT         : ${port}
-          Server Type  : ${appConfig.serverType}
     ================================
     `);
     } catch (error) {
