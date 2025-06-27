@@ -1,11 +1,4 @@
-import {
-    CanActivate,
-    ExecutionContext,
-    ForbiddenException,
-    Injectable,
-    Logger,
-    UnauthorizedException,
-} from '@nestjs/common';
+import { CanActivate, ExecutionContext, ForbiddenException, Injectable, UnauthorizedException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { Reflector } from '@nestjs/core';
 import { JwtService } from '@nestjs/jwt';
@@ -23,57 +16,58 @@ export class PermissionGuard implements CanActivate {
 
     async canActivate(context: ExecutionContext): Promise<boolean> {
         const permissions = this.reflector.get<string[]>('permissions', context.getHandler());
-        if (!permissions) {
-            return true;
-        }
+        if (!permissions) return true;
 
         const request = context.switchToHttp().getRequest();
         const authHeader = request.headers.authorization;
-        if (NestHelper.getInstance().isEmpty(authHeader)) {
+
+        if (NestHelper.getInstance().isEmpty(authHeader) || !authHeader.startsWith('Bearer ')) {
             throw new UnauthorizedException();
         }
 
-        if (!authHeader || !authHeader.startsWith('Bearer ')) {
-            throw new UnauthorizedException();
-        }
-
-        const tokenParts = authHeader.split(' ');
-        if (tokenParts.length !== 2) {
-            throw new UnauthorizedException();
-        }
-
-        const token = tokenParts[1];
+        const token = authHeader.split(' ')[1];
 
         try {
             this.jwt.verify(token, { secret: this.configService.getOrThrow('JWT_SECRET') });
-        } catch (err) {
+        } catch {
             throw new UnauthorizedException('Invalid token');
         }
 
         const payload: any = this.jwt.decode(token);
-        if (NestHelper.getInstance().isEmpty(payload)) {
-            throw new UnauthorizedException();
+        if (!payload || !payload.userId) {
+            throw new UnauthorizedException('Invalid token payload');
         }
 
+        // Use token scopes if available
+        let userPermissions: Set<string> = new Set();
+        let inScopes: boolean = false;
+        if (Array.isArray(payload.scopes)) {
+            userPermissions = new Set(payload.scopes);
+            inScopes = permissions.some((perm) => userPermissions.has(perm));
+
+            if (inScopes) {
+                request.user = {
+                    userId: payload.userId,
+                    email: payload.email,
+                    role: payload.role,
+                };
+                return true;
+            }
+        }
+
+        // Fallback: Fetch user from DB
         const user = await this.userService.find(payload.userId);
+        if (!user) throw new UnauthorizedException();
 
-        if (!user) {
-            return false;
-        }
+        userPermissions = new Set(user.scopes);
+        inScopes = permissions.some((perm) => userPermissions.has(perm));
 
-        const userPermissions = new Set(user?.scopes.map((e: string) => e));
-        const inScopes = permissions.some((perm) => userPermissions.has(perm));
+        if (!inScopes) throw new ForbiddenException();
 
-        if (!inScopes) {
-            throw new ForbiddenException();
-        }
-
-        // Attach user info to request for later use in JWT token
         request.user = {
             userId: user._id.toString(),
             email: user.email,
             role: user.role,
-            name: user.name,
         };
 
         return true;

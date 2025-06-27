@@ -34,8 +34,8 @@ export class AuthController {
 
     @Post('sign-in')
     @UseGuards(TenantCredentialsGuard)
-    async signIn(@Body() loginDto: LoginDto, @Res() res: Response): Promise<Response> {
-        return this.authService.signIn(loginDto, res);
+    async signIn(@Req() req: Request, @Res() res: Response): Promise<Response> {
+        return this.authService.signIn(req, res);
     }
 
     @Post('forgot-password')

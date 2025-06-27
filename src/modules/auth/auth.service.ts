@@ -9,13 +9,14 @@ import { ExceptionHelper } from 'common/instances/ExceptionHelper';
 import { NestHelper } from 'common/instances/NestHelper';
 import { EmailTemplate } from 'common/ses/email.template';
 import * as crypto from 'crypto';
-import { Response } from 'express';
+import { Request, Response } from 'express';
 import { ForgetPassDto } from 'modules/auth/dtos/forgotPassword.dto';
 import { LoginDto } from 'modules/auth/dtos/login.dto';
 import { SetPasswordDto, VerifyTokenDto } from 'modules/auth/dtos/setPassword.dto';
 import { GrantType } from 'modules/auth/enum/auth.enum';
 import { CreateUserDto } from 'modules/user/dtos/createUser.dto';
 import { IUser, UserStatusEnum } from 'modules/user/interface/user.interface';
+import { IUserSession } from 'modules/user/interface/userSession.interface';
 import { UserService } from 'modules/user/user.service';
 import { Types } from 'mongoose';
 
@@ -120,7 +121,8 @@ export class AuthService {
         // return await this.emailService.sendEmailWithZeptomail(iAwsSesSendEmail);
     }
 
-    async signIn(loginDto: LoginDto, res: Response): Promise<Response> {
+    async signIn(req: Request, res: Response): Promise<Response> {
+        const loginDto = req.body as unknown as LoginDto;
         let user: IUser;
 
         if (loginDto?.type === GrantType.PASSWORD) {
@@ -166,6 +168,21 @@ export class AuthService {
 
         ({ accessToken, refreshToken } = await this.generateToken(user, expiresIn));
 
+        const tzOffsetRaw = req.headers['x-timezone-offset'];
+        const timezoneOffset = tzOffsetRaw ? parseFloat(tzOffsetRaw as string) : 0;
+
+        const expiresAt = new Date(Date.now() + expiresIn * 1000);
+        const expiresAtUserLocal = new Date(expiresAt.getTime() + timezoneOffset * 60 * 60 * 1000);
+
+        const userSession: IUserSession = {
+            userId: user._id.toString(),
+            tokenId: crypto.randomUUID(),
+            accessToken,
+            refreshToken,
+            expiresAt: expiresAtUserLocal,
+            isRevoked: false,
+        };
+        await this.userService.createUserSession(userSession);
         // const accessTokenMaxAge = 1000 * expiresIn;
         // const refreshTokenMaxAge = 1000 * (loginDto.remember ? Timer.MONTH : Timer.DAY);
 
@@ -197,7 +214,7 @@ export class AuthService {
     async generateToken(user: IUser, expiresIn: number): Promise<{ accessToken: string; refreshToken: string }> {
         const [accessToken, refreshToken] = await Promise.all([
             this.jwtService.sign(
-                { userId: user._id, email: user.email, role: user.role },
+                { userId: user._id, email: user.email, role: user.role, scopes: user.scopes },
                 { secret: this.configService.getOrThrow('JWT_SECRET'), expiresIn: expiresIn },
             ),
             this.jwtService.sign(

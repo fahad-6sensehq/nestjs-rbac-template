@@ -15,6 +15,8 @@ import { ChangePasswordDto } from './dtos/changePassword.dto';
 import { CreateUserDto } from './dtos/createUser.dto';
 import { UpdateUserDto } from './dtos/updateUser.dto';
 import { User, UserDocument } from './entities/user.entity';
+import { UserSession, UserSessionDocument } from './entities/userSession.entity';
+import { IUserSession } from './interface/userSession.interface';
 
 @Injectable()
 export class UserService {
@@ -23,6 +25,8 @@ export class UserService {
     constructor(
         @InjectModel(User.name)
         private readonly userModel: Model<UserDocument>,
+        @InjectModel(UserSession.name)
+        private readonly userSessionModel: Model<UserSessionDocument>,
         private readonly userRoleService: UserRoleService,
         private readonly roleService: RoleService,
     ) {}
@@ -365,4 +369,31 @@ export class UserService {
 
         return await this.getUser(id, user);
     }
+
+    async createUserSession(userSession: IUserSession): Promise<UserSession> {
+        const sessionObj = ConstructObjectFromDto.constructUserSessionObject(userSession);
+        const session = await this.userSessionModel.create(sessionObj);
+
+        return session;
+    }
+
+    // async revokeUserSession(tokenId: string): Promise<void> {
+    //     await this.userSessionModel.updateOne({ tokenId }, { isRevoked: true });
+    // }
+
+    async getActiveSessions(userId: string): Promise<UserSession[]> {
+        return this.userSessionModel.find({ userId: new Types.ObjectId(userId), isRevoked: false }).exec();
+    }
+
+    async getActiveSessionByTokenId(tokenId: string): Promise<UserSession | null> {
+        return this.userSessionModel.findOne({ tokenId, isRevoked: false }).lean().exec();
+    }
+
+    async getActiveSessionByJwt(jwt: string): Promise<UserSession | null> {
+        return this.userSessionModel.findOne({ accessToken: jwt, isRevoked: false }).lean().exec();
+    }
+
+    // async getSessionById(sessionId: string): Promise<UserSession | null> {
+    //     return this.userSessionModel.findById(sessionId).exec();
+    // }
 }

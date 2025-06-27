@@ -4,6 +4,7 @@ import { CreatePermissionDto } from 'modules/rbac/permission/dtos/createPermissi
 import { CreateTenantDto } from 'modules/tenant/dtos/createTenant.dto';
 import { CreateUserDto } from 'modules/user/dtos/createUser.dto';
 import { IUser, UserStatusEnum } from 'modules/user/interface/user.interface';
+import { IUserSession } from 'modules/user/interface/userSession.interface';
 
 export class ConstructObjectFromDto {
     static constructCreateTenantObject(tenant: CreateTenantDto) {
@@ -34,6 +35,22 @@ export class ConstructObjectFromDto {
             resetLink: null,
             createdBy: user.userId ?? null,
             tenantId: user.tenantId ?? null,
+        };
+    }
+
+    static constructUserSessionObject(userSession: IUserSession) {
+        return {
+            userId: userSession.userId ?? null,
+            tokenId: userSession.tokenId ?? null,
+            accessToken: userSession.accessToken ?? null,
+            refreshToken: userSession.refreshToken ?? null,
+            userAgent: userSession.userAgent ?? null,
+            ipAddress: userSession.ipAddress ?? null,
+            deviceType: userSession.deviceType ?? null,
+            os: userSession.os ?? null,
+            browser: userSession.browser ?? null,
+            expiresAt: userSession.expiresAt ?? null,
+            isRevoked: userSession.isRevoked ?? null,
         };
     }
 

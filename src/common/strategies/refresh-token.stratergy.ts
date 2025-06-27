@@ -28,7 +28,6 @@ export class AccessTokenStrategy extends PassportStrategy(Strategy, 'jwt-refresh
             userId: payload.userId,
             email: payload.email,
             role: payload.role,
-            name: user.name,
         };
     }
 }
