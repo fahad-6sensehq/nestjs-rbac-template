@@ -16,7 +16,6 @@ export class PermissionGuard implements CanActivate {
 
     async canActivate(context: ExecutionContext): Promise<boolean> {
         const permissions = this.reflector.get<string[]>('permissions', context.getHandler());
-        if (!permissions) return true;
 
         const request = context.switchToHttp().getRequest();
         const authHeader = request.headers.authorization;
@@ -37,6 +36,8 @@ export class PermissionGuard implements CanActivate {
         if (!payload || !payload.userId) {
             throw new UnauthorizedException('Invalid token payload');
         }
+
+        if (!permissions) return true;
 
         // Use token scopes if available
         let userPermissions: Set<string> = new Set();
