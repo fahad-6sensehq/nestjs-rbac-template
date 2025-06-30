@@ -176,7 +176,6 @@ export class AuthService {
 
         const userSession: IUserSession = {
             userId: user._id.toString(),
-            tokenId: crypto.randomUUID(),
             accessToken,
             refreshToken,
             expiresAt: expiresAtUserLocal,

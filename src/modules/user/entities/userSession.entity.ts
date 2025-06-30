@@ -8,9 +8,6 @@ export class UserSession {
     @Prop({ type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true })
     userId: mongoose.Schema.Types.ObjectId;
 
-    @Prop({ required: true, unique: true })
-    tokenId: string;
-
     @Prop({ required: true })
     accessToken: string;
 
@@ -41,4 +38,4 @@ export class UserSession {
 
 export const UserSessionSchema = SchemaFactory.createForClass(UserSession);
 
-UserSessionSchema.index({ userId: 1, expiresAt: 1 }, { expireAfterSeconds: 0 });
+UserSessionSchema.index({ expiresAt: 1 }, { expireAfterSeconds: 0 });

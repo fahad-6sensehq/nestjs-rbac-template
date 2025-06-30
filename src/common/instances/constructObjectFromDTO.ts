@@ -41,7 +41,6 @@ export class ConstructObjectFromDto {
     static constructUserSessionObject(userSession: IUserSession) {
         return {
             userId: userSession.userId ?? null,
-            tokenId: userSession.tokenId ?? null,
             accessToken: userSession.accessToken ?? null,
             refreshToken: userSession.refreshToken ?? null,
             userAgent: userSession.userAgent ?? null,
