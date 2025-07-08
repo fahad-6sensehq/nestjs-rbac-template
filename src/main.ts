@@ -27,6 +27,8 @@ async function bootstrap() {
         const port = AppConfig.port;
         await app.listen(port);
 
+        // await checkServiceConnection(AppConfig.redisHost, AppConfig.redisPort, 'Redis');
+
         console.log(`
     ================================
     🚀 Application Configuration 🚀

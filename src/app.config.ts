@@ -18,4 +18,12 @@ export class AppConfig {
     static get jwtSecret(): string {
         return AppConfig.configService.getOrThrow('JWT_SECRET');
     }
+
+    static get redisHost(): string {
+        return AppConfig.configService.getOrThrow('REDIS_HOST');
+    }
+
+    static get redisPort(): number {
+        return AppConfig.configService.getOrThrow('REDIS_PORT');
+    }
 }
