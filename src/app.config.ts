@@ -26,4 +26,12 @@ export class AppConfig {
     static get redisPort(): number {
         return AppConfig.configService.getOrThrow('REDIS_PORT');
     }
+
+    static get redisUsername(): string {
+        return AppConfig.configService.getOrThrow('REDIS_USERNAME');
+    }
+
+    static get redisPassword(): string {
+        return AppConfig.configService.getOrThrow('REDIS_PASSWORD');
+    }
 }

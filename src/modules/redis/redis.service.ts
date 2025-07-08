@@ -1,21 +1,10 @@
 import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import { Inject, Injectable } from '@nestjs/common';
-import { AppConfig } from 'app.config';
 import { Cache } from 'cache-manager';
-import { checkServiceConnection } from 'common/utils/redisConnecting';
 
 @Injectable()
 export class RedisService {
     constructor(@Inject(CACHE_MANAGER) private readonly cacheManager: Cache) {}
-
-    async onModuleInit() {
-        try {
-            await checkServiceConnection(AppConfig.redisHost, AppConfig.redisPort, 'Redis');
-        } catch (err) {
-            console.error('❌ Redis connection check failed during module init');
-            throw err;
-        }
-    }
 
     async set(key: string, value: any, ttl: number = 3600): Promise<void> {
         await this.cacheManager.set(key, value, ttl);
