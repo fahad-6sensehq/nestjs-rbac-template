@@ -1,9 +1,9 @@
 import { getModelToken } from '@nestjs/mongoose';
 import { Test, TestingModule } from '@nestjs/testing';
 import { Model } from 'mongoose';
+import { CreateUserRoleDto } from './dtos/createUserRole.dto';
 import { UserRole } from './entities/userRole.entity';
 import { UserRoleService } from './userRole.service';
-import { CreateUserRoleDto } from './dtos/createUserRole.dto';
 
 describe('UserRoleService', () => {
     let service: UserRoleService;
@@ -35,7 +35,7 @@ describe('UserRoleService', () => {
             const userRole = {
                 userId: '',
                 roleId: '',
-                clientId: '',
+                tenantId: '',
             } as CreateUserRoleDto;
 
             jest.spyOn(userRoleModel, 'create').mockResolvedValueOnce(userRole as any);

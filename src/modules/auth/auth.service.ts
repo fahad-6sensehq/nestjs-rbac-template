@@ -4,7 +4,6 @@ import { JwtService } from '@nestjs/jwt';
 import { Timer } from 'common/constants/timer.constants';
 import { RoleType } from 'common/enums/role.enum';
 import { AuthHelper } from 'common/instances/auth.helper';
-import { DateHelper } from 'common/instances/date.helper';
 import { ExceptionHelper } from 'common/instances/ExceptionHelper';
 import { NestHelper } from 'common/instances/NestHelper';
 import { EmailTemplate } from 'common/ses/email.template';
@@ -156,10 +155,9 @@ export class AuthService {
             throw new BadRequestException('Invalid grant type.');
         }
 
-        // update last login time
-        const lastLogin = new DateHelper().getNowInISOString();
-        user.lastLogin = lastLogin;
-        await this.userService.updateUserLastLogin(user._id.toString(), lastLogin);
+        // // update last login time
+        // const lastLogin = new DateHelper().getNowInISOString();
+        // await this.userService.updateUserLastLogin(user._id.toString(), lastLogin);
 
         // fetch all the permissions
         user = await this.userService.find(user._id.toString());
@@ -183,8 +181,12 @@ export class AuthService {
             expiresAt: expiresAtUserLocal,
             isRevoked: false,
         };
-        await this.userService.createUserSession(userSession);
-        await this.redisService.set(`user:session:${user._id.toString()}`, userSession, expiresIn * 1000);
+
+        Promise.all([
+            this.userService.createUserSession(userSession),
+            this.redisService.set(`user:session:${user._id.toString()}`, userSession, expiresIn * 1000),
+        ]);
+
         // const accessTokenMaxAge = 1000 * expiresIn;
         // const refreshTokenMaxAge = 1000 * (loginDto.remember ? Timer.MONTH : Timer.DAY);
 

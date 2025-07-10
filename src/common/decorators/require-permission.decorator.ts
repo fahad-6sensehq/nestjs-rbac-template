@@ -1,5 +1,4 @@
-import { applyDecorators, UseGuards } from '@nestjs/common';
-import { Permissions } from 'common/decorators/permissions.decorator';
+import { applyDecorators, SetMetadata, UseGuards } from '@nestjs/common';
 import { PermissionGuard } from 'common/guards/permission.guard';
 
 export function RequirePermissions(
@@ -9,5 +8,5 @@ export function RequirePermissions(
     propertyKey?: string | symbol,
     descriptor?: TypedPropertyDescriptor<Y>,
 ) => void {
-    return applyDecorators(Permissions(...permissions), UseGuards(PermissionGuard));
+    return applyDecorators(SetMetadata('permissions', permissions), UseGuards(PermissionGuard));
 }

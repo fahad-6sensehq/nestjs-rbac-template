@@ -8,6 +8,6 @@ import { RolePermissionService } from './rolePermission.service';
     imports: [MongooseModule.forFeature([{ name: RolePermission.name, schema: RolePermissionSchema }])],
     controllers: [RolePermissionController],
     providers: [RolePermissionService],
-    exports: [RolePermissionService, MongooseModule],
+    exports: [RolePermissionService],
 })
 export class RolePermissionModule {}

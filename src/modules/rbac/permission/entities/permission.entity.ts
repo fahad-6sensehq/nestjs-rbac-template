@@ -6,18 +6,30 @@ export type PermissionDocument = HydratedDocument<Permission>;
 
 @Schema({ timestamps: true })
 export class Permission {
-    @Prop({ type: String, unique: true, required: true, index: true })
-    name: String;
+    @Prop({
+        type: String,
+        unique: true,
+        required: true,
+        index: true,
+        trim: true,
+        lowercase: true,
+    })
+    name: string;
 
     @Prop({
         type: String,
-        enum: [DefaultStatusEnum],
+        enum: Object.values(DefaultStatusEnum),
         default: DefaultStatusEnum.ACTIVE,
+        index: true,
     })
-    status: String;
+    status: string;
 
-    @Prop({ type: String, default: '' })
-    details: String;
+    @Prop({
+        type: String,
+        default: '',
+        trim: true,
+    })
+    details: string;
 }
 
 export const PermissionSchema = SchemaFactory.createForClass(Permission);

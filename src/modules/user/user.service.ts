@@ -7,7 +7,7 @@ import { ConstructObjectFromDto } from 'common/instances/constructObjectFromDTO'
 import { ExceptionHelper } from 'common/instances/ExceptionHelper';
 import { Utils } from 'common/instances/utils';
 import { IPermission } from 'modules/rbac/permission/interface/permission.interface';
-import { RoleService } from 'modules/rbac/role/role.service';
+import { Role, RoleDocument } from 'modules/rbac/role/entities/role.entity';
 import { UserRoleService } from 'modules/rbac/userRole/userRole.service';
 import { IUser, IUserListQuery, UserStatusEnum } from 'modules/user/interface/user.interface';
 import { Model, PipelineStage, Types } from 'mongoose';
@@ -28,7 +28,8 @@ export class UserService {
         @InjectModel(UserSession.name)
         private readonly userSessionModel: Model<UserSessionDocument>,
         private readonly userRoleService: UserRoleService,
-        private readonly roleService: RoleService,
+        @InjectModel(Role.name)
+        private readonly roleModel: Model<RoleDocument>,
     ) {}
 
     async createUser(createUser: CreateUserDto, user?: IUser): Promise<any> {
@@ -41,7 +42,7 @@ export class UserService {
             );
         }
 
-        const role = await this.roleService.findByName(createUser.role);
+        const role = await this.roleModel.findOne({ name: createUser.role });
         if (!role) {
             return ExceptionHelper.getInstance().defaultError(
                 'Role does not exist',
