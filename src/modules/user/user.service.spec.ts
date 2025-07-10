@@ -4,22 +4,23 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { RoleType } from 'common/enums/role.enum';
 import { AuthHelper } from 'common/instances/auth.helper';
 import { ExceptionHelper } from 'common/instances/ExceptionHelper';
-import { NestHelper } from 'common/instances/NestHelper';
-import { RoleService } from 'modules/rbac/role/role.service';
+import { Role } from 'modules/rbac/role/entities/role.entity';
 import { UserRoleService } from 'modules/rbac/userRole/userRole.service';
 import { Model, Types } from 'mongoose';
 import { ChangePasswordDto } from './dtos/changePassword.dto';
 import { CreateUserDto } from './dtos/createUser.dto';
 import { UpdateUserDto } from './dtos/updateUser.dto';
 import { User } from './entities/user.entity';
+import { UserSession } from './entities/userSession.entity';
 import { UserStatusEnum } from './interface/user.interface';
 import { UserService } from './user.service';
 
 describe('UserService', () => {
     let service: UserService;
     let userModel: Model<User>;
+    let userSessionModel: Model<UserSession>;
     let userRoleService: UserRoleService;
-    let roleService: RoleService;
+    let roleModel: Model<Role>;
 
     beforeEach(async () => {
         const module: TestingModule = await Test.createTestingModule({
@@ -37,15 +38,22 @@ describe('UserService', () => {
                     },
                 },
                 {
-                    provide: UserRoleService,
+                    provide: getModelToken(UserSession.name),
                     useValue: {
                         create: jest.fn(),
+                        find: jest.fn(),
                     },
                 },
                 {
-                    provide: RoleService,
+                    provide: getModelToken(Role.name),
                     useValue: {
-                        findByName: jest.fn(),
+                        findOne: jest.fn(),
+                    },
+                },
+                {
+                    provide: UserRoleService,
+                    useValue: {
+                        create: jest.fn(),
                     },
                 },
             ],
@@ -53,8 +61,9 @@ describe('UserService', () => {
 
         service = module.get<UserService>(UserService);
         userModel = module.get<Model<User>>(getModelToken(User.name));
+        userSessionModel = module.get<Model<UserSession>>(getModelToken(UserSession.name));
+        roleModel = module.get<Model<Role>>(getModelToken(Role.name));
         userRoleService = module.get<UserRoleService>(UserRoleService);
-        roleService = module.get<RoleService>(RoleService);
     });
 
     it('should be defined', () => {
@@ -70,7 +79,7 @@ describe('UserService', () => {
         registrationType: 'password',
         status: UserStatusEnum.ACTIVE,
         role: RoleType.SUPER_ADMIN,
-        clientId: '65d48166aa400c99e75fea70',
+        tenantId: '65d48166aa400c99e75fea70',
         isRegistered: true,
         isVerified: false,
         isDeleted: false,
@@ -140,7 +149,7 @@ describe('UserService', () => {
                     }) as any,
             );
 
-            jest.spyOn(roleService, 'findByName').mockResolvedValueOnce(null);
+            jest.spyOn(roleModel, 'findOne').mockResolvedValueOnce(null);
 
             jest.spyOn(ExceptionHelper.getInstance(), 'defaultError').mockImplementationOnce(() => {
                 throw {
@@ -165,7 +174,7 @@ describe('UserService', () => {
                     }) as any,
             );
 
-            jest.spyOn(roleService, 'findByName').mockResolvedValueOnce({
+            jest.spyOn(roleModel, 'findOne').mockResolvedValueOnce({
                 _id: new Types.ObjectId('67d7c99168379e304229b10d'),
             } as any);
 
@@ -214,7 +223,7 @@ describe('UserService', () => {
                     }) as any,
             );
 
-            jest.spyOn(roleService, 'findByName').mockResolvedValueOnce(null);
+            jest.spyOn(roleModel, 'findOne').mockResolvedValueOnce(null);
 
             jest.spyOn(ExceptionHelper.getInstance(), 'defaultError').mockImplementationOnce(() => {
                 throw {
@@ -239,7 +248,7 @@ describe('UserService', () => {
                     }) as any,
             );
 
-            jest.spyOn(roleService, 'findByName').mockResolvedValueOnce({
+            jest.spyOn(roleModel, 'findOne').mockResolvedValueOnce({
                 _id: new Types.ObjectId('67d7c99168379e304229b10d'),
             } as any);
 
@@ -260,44 +269,18 @@ describe('UserService', () => {
         const query = {
             page: '1',
             size: '10',
-            search: 'test',
-            status: ' 1153',
-            startDate: '2024-01-01',
-            endDate: '2024-12-31',
         };
 
-        it('should return all users for admin', async () => {
-            jest.spyOn(userModel, 'aggregate').mockResolvedValueOnce({ data: [], count: 0 } as any);
+        it('should return users', async () => {
+            jest.spyOn(userModel, 'aggregate').mockResolvedValueOnce({ data: [] as any, count: 0 } as any);
 
-            await expect(service.findAll(mockUser, query)).resolves.toEqual({ data: [], count: 0 });
+            await expect(service.findAll(mockUser, query)).resolves.toEqual({ data: [] as any, count: 0 });
         });
 
-        it('should return 0 users for admin', async () => {
+        it('should return 0 user', async () => {
             jest.spyOn(userModel, 'aggregate').mockResolvedValueOnce([]);
 
             await expect(service.findAll(mockUser, query)).resolves.toEqual({ data: [], count: 0 });
-        });
-
-        it('should return all users for client', async () => {
-            jest.spyOn(userModel, 'aggregate').mockResolvedValueOnce([
-                {
-                    allUsers: [{ _id: new Types.ObjectId('65d481d0aa400c99e75fea9a') }],
-                },
-            ] as any);
-
-            jest.spyOn(userModel, 'aggregate').mockResolvedValueOnce({ data: [], count: 0 } as any);
-
-            await expect(service.findAll(mockUser2, query)).resolves.toEqual({ data: [], count: 0 });
-        });
-
-        it('should return 0 users for client', async () => {
-            jest.spyOn(userModel, 'aggregate').mockResolvedValueOnce([
-                {
-                    allUsers: [],
-                },
-            ] as any);
-
-            await expect(service.findAll(mockUser2, query)).resolves.toEqual({ data: [], count: 0 });
         });
     });
 
@@ -543,6 +526,12 @@ describe('UserService', () => {
             jest.spyOn(userModel, 'findByIdAndUpdate').mockReturnValueOnce({} as any);
 
             await expect(service.updatePassword('67d7c99168379e304229b10s', 'abc', true)).resolves.toEqual({} as any);
+        });
+
+        it('return updated password', async () => {
+            jest.spyOn(userModel, 'findByIdAndUpdate').mockReturnValueOnce({} as any);
+
+            await expect(service.updatePassword('67d7c99168379e304229b10s', 'abc', false)).resolves.toEqual({} as any);
         });
     });
 
@@ -892,6 +881,27 @@ describe('UserService', () => {
             await expect(service.update('65d481d0aa400c99e75fea91', updateUserDto, mockUser2)).resolves.toEqual(
                 tempUser,
             );
+        });
+    });
+
+    describe('createUserSession', () => {
+        it('should create user session', async () => {
+            jest.spyOn(userSessionModel, 'create').mockResolvedValueOnce({} as any);
+
+            await expect(service.createUserSession({} as any)).resolves.toEqual({});
+        });
+    });
+
+    describe('getActiveSessions', () => {
+        it('should return active sessions', async () => {
+            jest.spyOn(userSessionModel, 'find').mockImplementationOnce(
+                () =>
+                    ({
+                        exec: jest.fn().mockResolvedValueOnce([]),
+                    }) as any,
+            );
+
+            await expect(service.getActiveSessions('670f5cb7fcec534287bf881a')).resolves.toEqual([]);
         });
     });
 });

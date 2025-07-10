@@ -139,17 +139,26 @@ export class AuthService {
                 throw new BadRequestException('Invalid email or password.');
             }
         } else if (loginDto.type === GrantType.TOKEN) {
-            try {
-                const decoded = this.jwtService.verify(loginDto.token, {
-                    secret: this.configService.getOrThrow('JWT_SECRET'),
-                });
-                user = await this.userService.findByEmail(decoded.email);
+            const decoded = this.jwtService.verify(loginDto.token, {
+                secret: this.configService.getOrThrow('JWT_SECRET'),
+            });
 
-                if (!user) {
-                    throw ExceptionHelper.getInstance().throwUserNotFoundException();
-                }
-            } catch (e) {
-                throw new BadRequestException('Invalid refresh token.');
+            if (!decoded?.email) {
+                throw ExceptionHelper.getInstance().defaultError(
+                    'Invalid refresh token.',
+                    'invalid_refresh_token',
+                    HttpStatus.BAD_REQUEST,
+                );
+            }
+
+            user = await this.userService.findByEmail(decoded.email);
+
+            if (!user || !user.password) {
+                throw ExceptionHelper.getInstance().defaultError(
+                    'Invalid refresh token.',
+                    'invalid_refresh_token',
+                    HttpStatus.BAD_REQUEST,
+                );
             }
         } else {
             throw new BadRequestException('Invalid grant type.');

@@ -1,4 +1,5 @@
 import { HttpException, HttpStatus } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import { Test, TestingModule } from '@nestjs/testing';
 import { RoleType } from 'common/enums/role.enum';
@@ -7,6 +8,7 @@ import { ExceptionHelper } from 'common/instances/ExceptionHelper';
 import { NestHelper } from 'common/instances/NestHelper';
 import { AuthService } from 'modules/auth/auth.service';
 import { GrantType } from 'modules/auth/enum/auth.enum';
+import { RedisService } from 'modules/redis/redis.service';
 import { CreateUserDto } from 'modules/user/dtos/createUser.dto';
 import { IUser, UserStatusEnum } from 'modules/user/interface/user.interface';
 import { UserService } from 'modules/user/user.service';
@@ -38,6 +40,7 @@ describe('AuthService', () => {
                         updateUserForProjectAssign: jest.fn(),
                         getUser: jest.fn(),
                         findById: jest.fn(),
+                        createUserSession: jest.fn(),
                     },
                 },
                 {
@@ -46,6 +49,19 @@ describe('AuthService', () => {
                         sign: jest.fn(),
                         verify: jest.fn(),
                         decode: jest.fn(),
+                    },
+                },
+                {
+                    provide: RedisService,
+                    useValue: {
+                        set: jest.fn(),
+                        get: jest.fn(),
+                    },
+                },
+                {
+                    provide: ConfigService,
+                    useValue: {
+                        getOrThrow: jest.fn(),
                     },
                 },
             ],
@@ -211,6 +227,8 @@ describe('AuthService', () => {
                 status: createUser.status,
                 role: createUser.role,
                 tenantId: createUser.tenantId,
+                phone: '123456',
+                receiveUpdate: 'false',
                 _id: '65d481d0aa400c99e75fea9a',
             });
 
@@ -254,49 +272,67 @@ describe('AuthService', () => {
 
     describe('signIn', () => {
         it('should return invalid grant type', async () => {
-            await expect(service.signIn({ type: 'pass' } as any, Response as any)).rejects.toThrow(
-                'Invalid grant type.',
-            );
+            const request = {
+                body: {
+                    type: 'pass',
+                },
+            } as any;
+            await expect(service.signIn(request, Response as any)).rejects.toThrow('Invalid grant type.');
         });
 
-        it('should return invalid refresh token', async () => {
-            jest.spyOn(jwtService, 'verify').mockImplementationOnce(() => {
-                throw new Error('Invalid refresh token');
-            });
+        const mockLoginWithToken = () => {
+            const request = {
+                body: {
+                    type: GrantType.TOKEN,
+                },
+            } as any;
 
-            await expect(service.signIn({ type: GrantType.TOKEN } as any, Response as any)).rejects.toThrow(
-                'Invalid refresh token',
-            );
+            return request;
+        };
+
+        it('should return invalid refresh token when token is null', async () => {
+            jest.spyOn(jwtService, 'verify').mockReturnValueOnce(null);
+
+            const request = mockLoginWithToken();
+
+            await expect(service.signIn(request, Response as any)).rejects.toThrow('Invalid refresh token.');
         });
 
-        it('should return user not found', async () => {
+        it('should return invalid refresh token when user not found', async () => {
             jest.spyOn(jwtService, 'verify').mockReturnValueOnce({ email: 'test@example.com' });
+            jest.spyOn(userService, 'findByEmail').mockResolvedValueOnce({
+                email: 'test@example.com',
+                password: null,
+            } as any);
 
-            jest.spyOn(userService, 'findByEmail').mockResolvedValueOnce(null);
+            const request = {
+                body: {
+                    type: GrantType.TOKEN,
+                    token: 'test',
+                },
+            } as any;
 
-            await expect(service.signIn({ type: GrantType.TOKEN } as any, Response as any)).rejects.toThrow(
-                'Invalid refresh token.',
-            );
+            await expect(service.signIn(request, Response as any)).rejects.toThrow('Invalid refresh token.');
         });
 
         it('should return invalid email or password while user not found', async () => {
             jest.spyOn(userService, 'findByEmail').mockResolvedValueOnce(null);
 
-            await expect(service.signIn({ type: GrantType.PASSWORD } as any, Response as any)).rejects.toThrow(
-                'Invalid email or password.',
-            );
+            await expect(
+                service.signIn({ body: { type: GrantType.PASSWORD } } as any, Response as any),
+            ).rejects.toThrow('Invalid email or password.');
         });
 
         it('should return invalid email or password while password do not match', async () => {
             jest.spyOn(userService, 'findByEmail').mockResolvedValueOnce({ password: '123' } as any);
             jest.spyOn(AuthHelper, 'isPasswordMatched').mockResolvedValueOnce(false);
 
-            await expect(service.signIn({ type: GrantType.PASSWORD } as any, Response as any)).rejects.toThrow(
-                'Invalid email or password.',
-            );
+            await expect(
+                service.signIn({ body: { type: GrantType.PASSWORD } } as any, Response as any),
+            ).rejects.toThrow('Invalid email or password.');
         });
 
-        it('should return successful response', async () => {
+        const mockLoginDto = () => {
             const jsonMock = jest.fn();
             // const cookieMock = jest.fn();
 
@@ -326,12 +362,43 @@ describe('AuthService', () => {
                 refreshToken: 'refresh-token',
             });
 
-            await service.signIn(
-                { type: GrantType.PASSWORD, remember: true, email: 'abc@gmail.com' } as any,
-                response as any,
-            );
+            jest.spyOn(userService, 'createUserSession').mockResolvedValueOnce({} as any);
 
-            // expect(cookieMock).toHaveBeenCalledTimes(2);
+            return response;
+        };
+
+        it('should return successful response', async () => {
+            const response = mockLoginDto();
+
+            const request = {
+                body: {
+                    type: GrantType.PASSWORD,
+                    remember: true,
+                    email: 'abc@gmail.com',
+                },
+                headers: {
+                    'x-timezone-offset': '+6',
+                },
+            } as any;
+
+            await service.signIn(request, response as any);
+        });
+
+        it('should return successful response', async () => {
+            const response = mockLoginDto();
+
+            const request = {
+                body: {
+                    type: GrantType.PASSWORD,
+                    remember: false,
+                    email: 'abc@gmail.com',
+                },
+                headers: {
+                    'x-timezone-offset': null,
+                },
+            } as any;
+
+            await service.signIn(request, response as any);
         });
     });
 

@@ -386,14 +386,6 @@ export class UserService {
         return this.userSessionModel.find({ userId: new Types.ObjectId(userId), isRevoked: false }).exec();
     }
 
-    async getActiveSessionByTokenId(tokenId: string): Promise<UserSession | null> {
-        return this.userSessionModel.findOne({ tokenId, isRevoked: false }).lean().exec();
-    }
-
-    async getActiveSessionByJwt(jwt: string): Promise<UserSession | null> {
-        return this.userSessionModel.findOne({ accessToken: jwt, isRevoked: false }).lean().exec();
-    }
-
     // async getSessionById(sessionId: string): Promise<UserSession | null> {
     //     return this.userSessionModel.findById(sessionId).exec();
     // }
