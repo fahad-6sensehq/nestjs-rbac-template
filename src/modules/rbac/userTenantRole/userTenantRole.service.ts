@@ -1,18 +1,18 @@
 import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
-import { CreateUserRoleDto } from './dtos/createUserRole.dto';
-import { UserRole, UserRoleDocument } from './entities/userRole.entity';
+import { CreateUserTenantRoleDto } from './dtos/createUserTenantRole.dto';
+import { UserTenantRole, UserTenantRoleDocument } from './entities/userTenantRole.entity';
 
 @Injectable()
-export class UserRoleService {
+export class UserTenantRoleService {
     constructor(
-        @InjectModel(UserRole.name)
-        private readonly userRoleModel: Model<UserRoleDocument>,
+        @InjectModel(UserTenantRole.name)
+        private readonly userRoleModel: Model<UserTenantRoleDocument>,
     ) {}
 
-    async create(createUserRoleDto: CreateUserRoleDto) {
-        return await this.userRoleModel.create(createUserRoleDto);
+    async create(createUserTenantRoleDto: CreateUserTenantRoleDto) {
+        return await this.userRoleModel.create(createUserTenantRoleDto);
     }
 
     // findAll() {

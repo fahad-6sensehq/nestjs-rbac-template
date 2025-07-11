@@ -2,7 +2,6 @@ import { ValidationPipe } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { AppConfig } from 'app.config';
-import { checkServiceConnection } from 'common/utils/redisConnectingCheck';
 import { AppModule } from './app.module';
 
 async function bootstrap() {
@@ -28,7 +27,7 @@ async function bootstrap() {
         const port = AppConfig.port;
         await app.listen(port);
 
-        await checkServiceConnection(AppConfig.redisHost, AppConfig.redisPort, 'Redis');
+        // await checkServiceConnection(AppConfig.redisHost, AppConfig.redisPort, 'Redis');
 
         console.log(`
     ================================
