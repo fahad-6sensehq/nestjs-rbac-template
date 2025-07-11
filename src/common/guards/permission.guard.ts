@@ -53,6 +53,7 @@ export class PermissionGuard implements CanActivate {
                     userId: payload.userId,
                     email: payload.email,
                     role: payload.role,
+                    tenantId: payload.tenantId,
                 };
                 return true;
             }
@@ -64,6 +65,7 @@ export class PermissionGuard implements CanActivate {
                 userId: payload.userId,
                 email: payload.email,
                 role: payload.role,
+                tenantId: payload.tenantId,
             };
             return true;
         }
@@ -81,6 +83,7 @@ export class PermissionGuard implements CanActivate {
             userId: user._id.toString(),
             email: user.email,
             role: user.role,
+            tenantId: user.tenantId,
         };
 
         return true;

@@ -373,6 +373,27 @@ export class AggregationHelper {
         }
     }
 
+    static searchByFuzzyNameAndEmail(aggregate: any[], query: any): void {
+        let trimmedQuery: string | null = null;
+        if (query?.search) {
+            trimmedQuery = query.search.trim();
+        }
+
+        if (trimmedQuery) {
+            const escapedQuery = trimmedQuery.replace(/[-/\\^$*+?.()|[\]{}]/g, '\\$&');
+            aggregate.push({
+                $search: {
+                    index: 'userEmailSearch',
+                    text: {
+                        query: escapedQuery,
+                        path: ['name', 'email'],
+                        fuzzy: { maxEdits: 2 },
+                    },
+                },
+            });
+        }
+    }
+
     static searchByName(aggregate: any[], query: any): void {
         let trimmedQuery: string | null = null;
         if (query?.search) {

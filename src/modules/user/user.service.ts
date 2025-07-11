@@ -32,6 +32,21 @@ export class UserService {
         private readonly roleModel: Model<RoleDocument>,
     ) {}
 
+    // async onModuleInit() {
+    //     const index1 = {
+    //         name: 'userEmailSearch',
+    //         definition: {
+    //             mappings: {
+    //                 dynamic: true,
+    //             },
+    //         },
+    //     };
+
+    //     await this.userModel.createSearchIndex(index1);
+
+    //     this.logger.log('userEmailSearch created');
+    // }
+
     async createUser(createUser: CreateUserDto, user?: IUser): Promise<any> {
         const userExists = await this.userModel.findOne({ email: createUser.email }).lean();
         if (userExists) {
@@ -79,6 +94,12 @@ export class UserService {
 
     async findAll(user: IUser, query: IUserListQuery): Promise<{ data?: IUser[]; count?: number }> {
         const { aggregate, page, size } = Utils.defineListRule(query);
+
+        /**
+         * - Add search by fuzzy name and email
+         * - $search stage must be the first stage in the pipeline or it will not work
+         */
+        // AggregationHelper.searchByFuzzyNameAndEmail(aggregate, query);
 
         AggregationHelper.filterByMatchAndQueriesAll(aggregate, [
             { tenantId: new Types.ObjectId(`${user?.tenantId}`) },

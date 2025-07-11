@@ -227,7 +227,7 @@ export class AuthService {
     async generateToken(user: IUser, expiresIn: number): Promise<{ accessToken: string; refreshToken: string }> {
         const [accessToken, refreshToken] = await Promise.all([
             this.jwtService.sign(
-                { userId: user._id, email: user.email, role: user.role, scopes: user.scopes },
+                { userId: user._id, email: user.email, role: user.role, scopes: user.scopes, tenantId: user.tenantId },
                 { secret: this.configService.getOrThrow('JWT_SECRET'), expiresIn: expiresIn },
             ),
             this.jwtService.sign(
