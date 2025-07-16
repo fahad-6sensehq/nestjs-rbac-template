@@ -2,13 +2,11 @@ import { ValidationPipe } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { AppConfig } from 'app.config';
-import { checkServiceConnection } from 'common/utils/redisConnectingCheck';
 import { AppModule } from './app.module';
 
 async function bootstrap() {
     try {
         const app = await NestFactory.create(AppModule, {
-            cors: true,
             logger: ['log', 'error', 'warn'],
         });
 
@@ -25,10 +23,10 @@ async function bootstrap() {
         const document = SwaggerModule.createDocument(app, config);
         SwaggerModule.setup('xyz', app, document);
 
-        const port = AppConfig.port;
+        const port = 9000;
         await app.listen(port);
 
-        await checkServiceConnection(AppConfig.redisHost, AppConfig.redisPort, 'Redis');
+        // await checkServiceConnection(AppConfig.redisHost, AppConfig.redisPort, 'Redis');
 
         console.log(`
     ================================

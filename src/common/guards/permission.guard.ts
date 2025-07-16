@@ -3,7 +3,6 @@ import { ConfigService } from '@nestjs/config';
 import { Reflector } from '@nestjs/core';
 import { JwtService } from '@nestjs/jwt';
 import { NestHelper } from 'common/instances/NestHelper';
-import { RedisService } from 'modules/redis/redis.service';
 import { UserService } from 'modules/user/user.service';
 
 @Injectable()
@@ -13,7 +12,7 @@ export class PermissionGuard implements CanActivate {
         private jwt: JwtService,
         private readonly userService: UserService,
         private readonly configService: ConfigService,
-        private readonly redisService: RedisService,
+        // private readonly redisService: RedisService,
     ) {}
 
     async canActivate(context: ExecutionContext): Promise<boolean> {
@@ -59,16 +58,16 @@ export class PermissionGuard implements CanActivate {
             }
         }
 
-        const userSession = await this.redisService.get(`user:session:${payload.userId}`);
-        if (userSession) {
-            request.user = {
-                userId: payload.userId,
-                email: payload.email,
-                role: payload.role,
-                tenantId: payload.tenantId,
-            };
-            return true;
-        }
+        // const userSession = await this.redisService.get(`user:session:${payload.userId}`);
+        // if (userSession) {
+        //     request.user = {
+        //         userId: payload.userId,
+        //         email: payload.email,
+        //         role: payload.role,
+        //         tenantId: payload.tenantId,
+        //     };
+        //     return true;
+        // }
 
         // Fallback: Fetch user from DB
         const user = await this.userService.find(payload.userId);

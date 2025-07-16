@@ -7,10 +7,6 @@ export class AppConfig {
         AppConfig.configService = configService;
     }
 
-    static get port(): number {
-        return 9000;
-    }
-
     static get environment(): string {
         return AppConfig.configService.getOrThrow('ENVIRONMENT');
     }

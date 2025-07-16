@@ -13,7 +13,6 @@ import { ForgetPassDto } from 'modules/auth/dtos/forgotPassword.dto';
 import { LoginDto } from 'modules/auth/dtos/login.dto';
 import { SetPasswordDto, VerifyTokenDto } from 'modules/auth/dtos/setPassword.dto';
 import { GrantType } from 'modules/auth/enum/auth.enum';
-import { RedisService } from 'modules/redis/redis.service';
 import { CreateUserDto } from 'modules/user/dtos/createUser.dto';
 import { IUser, UserStatusEnum } from 'modules/user/interface/user.interface';
 import { IUserSession } from 'modules/user/interface/userSession.interface';
@@ -28,7 +27,7 @@ export class AuthService {
         private readonly userService: UserService,
         private readonly jwtService: JwtService,
         private readonly configService: ConfigService,
-        private readonly redisService: RedisService,
+        // private readonly redisService: RedisService,
     ) {}
 
     async signUpMainAdmin(createUser: CreateUserDto, tenantId: Types.ObjectId): Promise<IUser> {
@@ -193,7 +192,7 @@ export class AuthService {
 
         Promise.all([
             this.userService.createUserSession(userSession),
-            this.redisService.set(`user:session:${user._id.toString()}`, userSession, expiresIn * 1000),
+            // this.redisService.set(`user:session:${user._id.toString()}`, userSession, expiresIn * 1000),
         ]);
 
         // const accessTokenMaxAge = 1000 * expiresIn;

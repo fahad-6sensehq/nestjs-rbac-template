@@ -7,7 +7,6 @@ import { PermissionModule } from 'modules/rbac/permission/permission.module';
 import { RoleModule } from 'modules/rbac/role/role.module';
 import { RolePermissionModule } from 'modules/rbac/rolePermission/rolePermission.module';
 import { UserRoleModule } from 'modules/rbac/userRole/userRole.module';
-import { RedisModule } from 'modules/redis/redis.module';
 import { TenantModule } from 'modules/tenant/tenant.module';
 import { UserModule } from 'modules/user/user.module';
 
@@ -16,7 +15,7 @@ import { UserModule } from 'modules/user/user.module';
         ConfigModule.forRoot({
             isGlobal: true,
         }),
-        RedisModule,
+        // RedisModule,
         DatabaseModule,
         AuthModule,
         TenantModule,
