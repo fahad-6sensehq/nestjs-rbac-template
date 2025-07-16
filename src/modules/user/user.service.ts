@@ -1,6 +1,5 @@
 import { BadRequestException, HttpStatus, Injectable, Logger } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import { RoleType } from 'common/enums/role.enum';
 import { AggregationHelper } from 'common/instances/aggregation.helper';
 import { AuthHelper } from 'common/instances/auth.helper';
 import { ConstructObjectFromDto } from 'common/instances/constructObjectFromDTO';
@@ -8,7 +7,7 @@ import { ExceptionHelper } from 'common/instances/ExceptionHelper';
 import { Utils } from 'common/instances/utils';
 import { IPermission } from 'modules/rbac/permission/interface/permission.interface';
 import { Role, RoleDocument } from 'modules/rbac/role/entities/role.entity';
-import { UserRoleService } from 'modules/rbac/userRole/userRole.service';
+import { UserTenantRoleService } from 'modules/rbac/userTenantRole/userTenantRole.service';
 import { IUser, IUserListQuery, UserStatusEnum } from 'modules/user/interface/user.interface';
 import { Model, PipelineStage, Types } from 'mongoose';
 import { ChangePasswordDto } from './dtos/changePassword.dto';
@@ -27,7 +26,7 @@ export class UserService {
         private readonly userModel: Model<UserDocument>,
         @InjectModel(UserSession.name)
         private readonly userSessionModel: Model<UserSessionDocument>,
-        private readonly userRoleService: UserRoleService,
+        private readonly userTenantRoleService: UserTenantRoleService,
         @InjectModel(Role.name)
         private readonly roleModel: Model<RoleDocument>,
     ) {}
@@ -75,8 +74,9 @@ export class UserService {
 
         const newUser = await this.userModel.create(userObj);
 
-        await this.userRoleService.create({
+        await this.userTenantRoleService.create({
             userId: newUser._id.toString(),
+            roleName: role.name,
             roleId: role._id.toString(),
             tenantId: String(newUser.tenantId),
         });
@@ -119,13 +119,14 @@ export class UserService {
         return Utils.returnListResponse(users);
     }
 
-    async findOneData(id: string): Promise<any> {
+    async findOneData(id: string, tenantId: string): Promise<any> {
         const objId = new Types.ObjectId(id);
+        const tenantIdObj = new Types.ObjectId(tenantId);
 
         const aggregate: PipelineStage[] = [];
-        AggregationHelper.filterByMatchAndQueriesAll(aggregate, [{ _id: objId }]);
+        AggregationHelper.filterByMatchAndQueriesAll(aggregate, [{ _id: objId }, { tenantId: tenantIdObj }]);
 
-        AggregationHelper.lookupForIdLocalKey(aggregate, 'userroles', 'userId', 'userRole');
+        AggregationHelper.lookupForIdLocalKey(aggregate, 'usertenantroles', 'userId', 'userRole');
         AggregationHelper.unwindAField(aggregate, 'userRole', true);
 
         AggregationHelper.lookupForCustomFields(
@@ -155,12 +156,13 @@ export class UserService {
 
         return {
             ...result[0],
+            tenantId: tenantIdObj.toString(),
             scopes: [...scopes],
         };
     }
 
-    async find(id: string): Promise<IUser> {
-        return await this.findOneData(id);
+    async find(id: string, tenantId: string): Promise<IUser> {
+        return await this.findOneData(id, tenantId);
     }
 
     async findByEmail(email: string): Promise<IUser> {
@@ -196,23 +198,23 @@ export class UserService {
         return users[0];
     }
 
-    async isSuperAdmin(id: string): Promise<boolean> {
-        const user = await this.userModel.findById(id).lean();
+    // async isSuperAdmin(id: string): Promise<boolean> {
+    //     const user = await this.userModel.findById(id).lean();
 
-        if (!user) {
-            throw ExceptionHelper.getInstance().throwUserNotFoundException();
-        }
+    //     if (!user) {
+    //         throw ExceptionHelper.getInstance().throwUserNotFoundException();
+    //     }
 
-        if (user.role !== RoleType.SUPER_ADMIN) {
-            throw ExceptionHelper.getInstance().defaultError(
-                'User not super admin',
-                'user_not_super_admin',
-                HttpStatus.BAD_REQUEST,
-            );
-        }
+    //     if (user.role !== RoleType.SUPER_ADMIN) {
+    //         throw ExceptionHelper.getInstance().defaultError(
+    //             'User not super admin',
+    //             'user_not_super_admin',
+    //             HttpStatus.BAD_REQUEST,
+    //         );
+    //     }
 
-        return true;
-    }
+    //     return true;
+    // }
 
     async updateUserLastLogin(userId: string, lastLogin: string): Promise<IUser> {
         return await this.userModel.findByIdAndUpdate({ _id: userId }, { lastLogin }, { new: true }).exec();

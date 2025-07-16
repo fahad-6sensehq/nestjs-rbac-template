@@ -70,7 +70,7 @@ export class PermissionGuard implements CanActivate {
         // }
 
         // Fallback: Fetch user from DB
-        const user = await this.userService.find(payload.userId);
+        const user = await this.userService.find(payload.userId, payload.tenantId);
         if (!user) throw new UnauthorizedException();
 
         userPermissions = new Set(user.scopes);

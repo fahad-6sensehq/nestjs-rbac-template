@@ -378,6 +378,7 @@ describe('AuthService', () => {
                 },
                 headers: {
                     'x-timezone-offset': '+6',
+                    authorization: 'basic token',
                 },
             } as any;
 
@@ -395,6 +396,7 @@ describe('AuthService', () => {
                 },
                 headers: {
                     'x-timezone-offset': null,
+                    authorization: 'basic token',
                 },
             } as any;
 

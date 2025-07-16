@@ -1,7 +1,6 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { BaseSchema } from 'common/baseSchema/base.entity';
 import { RegistrationTypeEnum } from 'common/enums/globalStatus.enum';
-import { RoleType } from 'common/enums/role.enum';
 import mongoose, { HydratedDocument } from 'mongoose';
 import { UserStatusEnum } from '../interface/user.interface';
 
@@ -21,9 +20,6 @@ export class User extends BaseSchema {
     @Prop({ type: String, enum: UserStatusEnum, default: UserStatusEnum.INVITED })
     status: UserStatusEnum;
 
-    @Prop({ type: String, enum: RoleType, required: true })
-    role: RoleType;
-
     @Prop({ type: String, enum: RegistrationTypeEnum, default: RegistrationTypeEnum.PASSWORD })
     registrationType: string;
 
@@ -40,12 +36,12 @@ export class User extends BaseSchema {
     lastLogin: string;
 
     @Prop({
-        type: mongoose.Schema.Types.ObjectId,
+        type: [mongoose.Schema.Types.ObjectId],
         ref: 'Tenant',
         required: true,
         index: true,
     })
-    tenantId: mongoose.Schema.Types.ObjectId;
+    tenantId: mongoose.Schema.Types.ObjectId[];
 }
 
 export const UserSchema = SchemaFactory.createForClass(User);

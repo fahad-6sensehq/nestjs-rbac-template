@@ -5,7 +5,7 @@ import { RoleType } from 'common/enums/role.enum';
 import { AuthHelper } from 'common/instances/auth.helper';
 import { ExceptionHelper } from 'common/instances/ExceptionHelper';
 import { Role } from 'modules/rbac/role/entities/role.entity';
-import { UserRoleService } from 'modules/rbac/userRole/userRole.service';
+import { UserTenantRoleService } from 'modules/rbac/userTenantRole/userTenantRole.service';
 import { Model, Types } from 'mongoose';
 import { ChangePasswordDto } from './dtos/changePassword.dto';
 import { CreateUserDto } from './dtos/createUser.dto';
@@ -19,7 +19,7 @@ describe('UserService', () => {
     let service: UserService;
     let userModel: Model<User>;
     let userSessionModel: Model<UserSession>;
-    let userRoleService: UserRoleService;
+    let userTenantRoleService: UserTenantRoleService;
     let roleModel: Model<Role>;
 
     beforeEach(async () => {
@@ -51,7 +51,7 @@ describe('UserService', () => {
                     },
                 },
                 {
-                    provide: UserRoleService,
+                    provide: UserTenantRoleService,
                     useValue: {
                         create: jest.fn(),
                     },
@@ -63,7 +63,7 @@ describe('UserService', () => {
         userModel = module.get<Model<User>>(getModelToken(User.name));
         userSessionModel = module.get<Model<UserSession>>(getModelToken(UserSession.name));
         roleModel = module.get<Model<Role>>(getModelToken(Role.name));
-        userRoleService = module.get<UserRoleService>(UserRoleService);
+        userTenantRoleService = module.get<UserTenantRoleService>(UserTenantRoleService);
     });
 
     it('should be defined', () => {
@@ -182,7 +182,7 @@ describe('UserService', () => {
                 _id: new Types.ObjectId('67d7c99168379e304229b10d'),
                 clientId: new Types.ObjectId('67d7c99168379e304229b10d'),
             } as any);
-            jest.spyOn(userRoleService, 'create').mockResolvedValueOnce({} as any);
+            jest.spyOn(userTenantRoleService, 'create').mockResolvedValueOnce({} as any);
 
             await expect(service.createMainAdmin({} as CreateUserDto)).resolves.toEqual({
                 _id: new Types.ObjectId('67d7c99168379e304229b10d'),
@@ -256,7 +256,7 @@ describe('UserService', () => {
                 _id: new Types.ObjectId('67d7c99168379e304229b10d'),
                 clientId: new Types.ObjectId('67d7c99168379e304229b10d'),
             } as any);
-            jest.spyOn(userRoleService, 'create').mockResolvedValueOnce({} as any);
+            jest.spyOn(userTenantRoleService, 'create').mockResolvedValueOnce({} as any);
 
             await expect(service.create({} as CreateUserDto, mockUser)).resolves.toEqual({
                 _id: new Types.ObjectId('67d7c99168379e304229b10d'),
@@ -293,7 +293,9 @@ describe('UserService', () => {
                     }) as any,
             );
 
-            await expect(service.findOneData('67d7c99168379e304229b10d')).resolves.toEqual(null);
+            await expect(service.findOneData('67d7c99168379e304229b10d', '67d7c99168379e304229b10d')).resolves.toEqual(
+                null,
+            );
         });
 
         it('should return user data', async () => {
@@ -308,8 +310,9 @@ describe('UserService', () => {
                     }) as any,
             );
 
-            await expect(service.findOneData('67d7c99168379e304229b10d')).resolves.toEqual({
+            await expect(service.findOneData('67d7c99168379e304229b10d', '67d7c99168379e304229b10d')).resolves.toEqual({
                 scopes: [undefined],
+                tenantId: '67d7c99168379e304229b10d',
             });
         });
     });
@@ -318,7 +321,9 @@ describe('UserService', () => {
         it('should return user data', async () => {
             jest.spyOn(service, 'findOneData').mockResolvedValueOnce([] as any);
 
-            await expect(service.find('67d7c99168379e304229b10d')).resolves.toEqual([] as any);
+            await expect(service.find('67d7c99168379e304229b10d', '67d7c99168379e304229b10d')).resolves.toEqual(
+                [] as any,
+            );
         });
     });
 

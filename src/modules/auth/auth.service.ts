@@ -5,6 +5,7 @@ import { Timer } from 'common/constants/timer.constants';
 import { RoleType } from 'common/enums/role.enum';
 import { AuthHelper } from 'common/instances/auth.helper';
 import { ExceptionHelper } from 'common/instances/ExceptionHelper';
+import { TenantIdGetHelper } from 'common/instances/getTenantId.helper';
 import { NestHelper } from 'common/instances/NestHelper';
 import { EmailTemplate } from 'common/ses/email.template';
 import * as crypto from 'crypto';
@@ -45,8 +46,7 @@ export class AuthService {
         const userObj = {
             ...createUser,
             password: hashedPassword,
-            role: RoleType.SUPER_ADMIN,
-            tenantId,
+            tenantId: [tenantId],
             createdBy: tenantId,
         };
 
@@ -168,7 +168,8 @@ export class AuthService {
         // await this.userService.updateUserLastLogin(user._id.toString(), lastLogin);
 
         // fetch all the permissions
-        user = await this.userService.find(user._id.toString());
+        const tenantId = await TenantIdGetHelper.getTenantIdFromRequest(req);
+        user = await this.userService.find(user._id.toString(), tenantId);
 
         // set token expiration based on users selection
         let accessToken: string, refreshToken: string;
