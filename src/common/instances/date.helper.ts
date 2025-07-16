@@ -142,6 +142,10 @@ export class DateHelper {
         return DateTime.now().setZone('UTC').toJSDate().toISOString();
     }
 
+    getNowInISOStringWithOffset(offset: number): string {
+        return DateTime.now().setZone('UTC').plus({ hours: offset }).toJSDate().toISOString();
+    }
+
     getTimeInISOString(date: Date): string {
         return DateTime.fromJSDate(date).setZone('UTC').toJSDate().toISOString();
     }

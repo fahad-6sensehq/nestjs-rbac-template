@@ -126,13 +126,13 @@ export class UserService {
         const aggregate: PipelineStage[] = [];
         AggregationHelper.filterByMatchAndQueriesAll(aggregate, [{ _id: objId }, { tenantId: tenantIdObj }]);
 
-        AggregationHelper.lookupForIdLocalKey(aggregate, 'usertenantroles', 'userId', 'userRole');
-        AggregationHelper.unwindAField(aggregate, 'userRole', true);
+        AggregationHelper.lookupForIdLocalKey(aggregate, 'usertenantroles', 'userId', 'userTenantRole');
+        AggregationHelper.unwindAField(aggregate, 'userTenantRole', true);
 
         AggregationHelper.lookupForCustomFields(
             aggregate,
             'rolepermissions',
-            'userRole.roleId',
+            'userTenantRole.roleId',
             'roleId',
             'rolePermissions',
         );
@@ -144,18 +144,21 @@ export class UserService {
             'permissions',
         );
 
-        AggregationHelper.projectFields(aggregate, ['password', 'resetLink', 'userRole', 'rolePermissions']);
+        AggregationHelper.projectFields(aggregate, ['password', 'resetLink', 'rolePermissions']);
 
         const result = await this.userModel.aggregate(aggregate).exec();
 
         if (!result.length) return null;
 
+        let role = result[0].userTenantRole.roleName;
         let scopes = result[0].permissions.map((permission: IPermission) => permission.name);
 
         delete result[0].permissions;
+        delete result[0].userTenantRole;
 
         return {
             ...result[0],
+            role,
             tenantId: tenantIdObj.toString(),
             scopes: [...scopes],
         };
@@ -167,6 +170,56 @@ export class UserService {
 
     async findByEmail(email: string): Promise<IUser> {
         return await this.userModel.findOne({ email }).lean().exec();
+    }
+
+    /**
+     * Find user by email with role and permissions
+     * @param email
+     * @param tenantId
+     * @returns
+     */
+    async findByEmailWithRole(email: string, tenantId: string): Promise<IUser> {
+        const tenantIdObj = new Types.ObjectId(tenantId);
+
+        const aggregate: PipelineStage[] = [];
+        AggregationHelper.filterByMatchAndQueriesAll(aggregate, [{ email }, { tenantId: tenantIdObj }]);
+
+        AggregationHelper.lookupForIdLocalKey(aggregate, 'usertenantroles', 'userId', 'userTenantRole');
+        AggregationHelper.unwindAField(aggregate, 'userTenantRole', true);
+
+        AggregationHelper.lookupForCustomFields(
+            aggregate,
+            'rolepermissions',
+            'userTenantRole.roleId',
+            'roleId',
+            'rolePermissions',
+        );
+
+        AggregationHelper.lookupForIdForeignKey(
+            aggregate,
+            'permissions',
+            'rolePermissions.permissionId',
+            'permissions',
+        );
+
+        AggregationHelper.projectFields(aggregate, ['resetLink', 'rolePermissions']);
+
+        const result = await this.userModel.aggregate(aggregate).exec();
+
+        if (!result.length) return null;
+
+        let role = result[0].userTenantRole.roleName;
+        let scopes = result[0].permissions.map((permission: IPermission) => permission.name);
+
+        delete result[0].permissions;
+        delete result[0].userTenantRole;
+
+        return {
+            ...result[0],
+            role,
+            tenantId: tenantIdObj.toString(),
+            scopes: [...scopes],
+        };
     }
 
     async findById(id: string): Promise<IUser> {

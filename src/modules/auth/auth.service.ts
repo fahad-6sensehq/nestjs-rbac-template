@@ -4,6 +4,7 @@ import { JwtService } from '@nestjs/jwt';
 import { Timer } from 'common/constants/timer.constants';
 import { RoleType } from 'common/enums/role.enum';
 import { AuthHelper } from 'common/instances/auth.helper';
+import { DateHelper } from 'common/instances/date.helper';
 import { ExceptionHelper } from 'common/instances/ExceptionHelper';
 import { TenantIdGetHelper } from 'common/instances/getTenantId.helper';
 import { NestHelper } from 'common/instances/NestHelper';
@@ -46,6 +47,8 @@ export class AuthService {
         const userObj = {
             ...createUser,
             password: hashedPassword,
+            role: RoleType.SUPER_ADMIN,
+            status: UserStatusEnum.ACTIVE,
             tenantId: [tenantId],
             createdBy: tenantId,
         };
@@ -123,12 +126,13 @@ export class AuthService {
 
     async signIn(req: Request, res: Response): Promise<Response> {
         const loginDto = req.body as unknown as LoginDto;
+        const tenantId = await TenantIdGetHelper.getTenantIdFromRequest(req);
         let user: IUser;
 
-        if (loginDto?.type === GrantType.PASSWORD) {
-            user = await this.userService.findByEmail(loginDto.email);
+        if (loginDto.type === GrantType.PASSWORD) {
+            user = await this.userService.findByEmailWithRole(loginDto.email, tenantId);
 
-            if (!user?.password) {
+            if (!user.password) {
                 throw new NotFoundException('Invalid email or password.');
             }
 
@@ -137,12 +141,14 @@ export class AuthService {
             if (!isPasswordMatched) {
                 throw new BadRequestException('Invalid email or password.');
             }
+
+            delete user.password;
         } else if (loginDto.type === GrantType.TOKEN) {
             const decoded = this.jwtService.verify(loginDto.token, {
                 secret: this.configService.getOrThrow('JWT_SECRET'),
             });
 
-            if (!decoded?.email) {
+            if (!decoded.email) {
                 throw ExceptionHelper.getInstance().defaultError(
                     'Invalid refresh token.',
                     'invalid_refresh_token',
@@ -150,7 +156,7 @@ export class AuthService {
                 );
             }
 
-            user = await this.userService.findByEmail(decoded.email);
+            user = await this.userService.findByEmailWithRole(decoded.email, tenantId);
 
             if (!user || !user.password) {
                 throw ExceptionHelper.getInstance().defaultError(
@@ -163,22 +169,20 @@ export class AuthService {
             throw new BadRequestException('Invalid grant type.');
         }
 
-        // // update last login time
-        // const lastLogin = new DateHelper().getNowInISOString();
-        // await this.userService.updateUserLastLogin(user._id.toString(), lastLogin);
+        // extract timezone and update last login time
+        const tzOffsetRaw = req.headers['x-timezone-offset'];
+        const timezoneOffset = tzOffsetRaw ? parseFloat(tzOffsetRaw as string) : 0;
+        const lastLogin = new DateHelper().getNowInISOStringWithOffset(timezoneOffset);
+        await this.userService.updateUserLastLogin(user._id.toString(), lastLogin);
 
         // fetch all the permissions
-        const tenantId = await TenantIdGetHelper.getTenantIdFromRequest(req);
-        user = await this.userService.find(user._id.toString(), tenantId);
+        // user = await this.userService.find(user._id.toString(), tenantId);
 
         // set token expiration based on users selection
         let accessToken: string, refreshToken: string;
         const expiresIn = loginDto.remember ? Timer.MONTH : Timer.DAY;
 
         ({ accessToken, refreshToken } = await this.generateToken(user, expiresIn));
-
-        const tzOffsetRaw = req.headers['x-timezone-offset'];
-        const timezoneOffset = tzOffsetRaw ? parseFloat(tzOffsetRaw as string) : 0;
 
         const expiresAt = new Date(Date.now() + expiresIn * 1000);
         const expiresAtUserLocal = new Date(expiresAt.getTime() + timezoneOffset * 60 * 60 * 1000);
@@ -227,11 +231,11 @@ export class AuthService {
     async generateToken(user: IUser, expiresIn: number): Promise<{ accessToken: string; refreshToken: string }> {
         const [accessToken, refreshToken] = await Promise.all([
             this.jwtService.sign(
-                { userId: user._id, email: user.email, role: user.role, scopes: user.scopes, tenantId: user.tenantId },
+                { userId: user._id, email: user.email, role: user.role, tenantId: user.tenantId, scopes: user.scopes },
                 { secret: this.configService.getOrThrow('JWT_SECRET'), expiresIn: expiresIn },
             ),
             this.jwtService.sign(
-                { userId: user._id, email: user.email, role: user.role },
+                { userId: user._id, email: user.email, role: user.role, tenantId: user.tenantId },
                 { secret: this.configService.getOrThrow('JWT_SECRET'), expiresIn: Timer.MONTH },
             ),
         ]);
